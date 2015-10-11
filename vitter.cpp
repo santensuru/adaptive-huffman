@@ -1,3 +1,11 @@
+/**
+ * Adaptive Huffman
+ *
+ * Author: Djuned Fernando Djusdek
+ *         5112.100.071
+ *         Informatics - ITS
+ */
+
 #include <iostream>
 #include <algorithm>
 #include <vector>
@@ -186,8 +194,9 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 	increment_weight(&temp);
 	*tree = temp;
 	
-	print_tree(&*tree, 0);
-	std::cout << '\n';
+	// to print the tree, after update
+//	print_tree(&*tree, 0);
+//	std::cout << '\n';
 	
 //	std::cout << (*tree)->right->symbol << '\n';
 
@@ -210,7 +219,7 @@ int main() {
 	
 	update(&root, (unsigned char)0x22, &dictionary);
 	
-//	update(&root, (unsigned char)0x27, &dictionary);
+	update(&root, (unsigned char)0x27, &dictionary);
 	
 	print_tree(&root, 0);
 	
