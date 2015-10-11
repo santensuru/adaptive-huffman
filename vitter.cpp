@@ -44,18 +44,25 @@ void insert_node(node **root, node *leaf) {
 	if (*root == NULL) {
 		*root = leaf;
 	} else {
+		node *mass = *root;
 		node *temp = *root;
 		node *temp2 = *root;
-		while(1) {
-			if(temp->left != NULL) {
+		do {
+			while(temp->left != NULL) {
 				temp2 = temp;
 				temp = temp->left;
 			}
-			else
+			if (temp2->left->weight == 0) {
+				temp2->left = leaf;
+				temp2->left->parent = temp2;
+//				printf(">> %c %c\n", temp2->left->right->symbol, leaf->right->symbol);
 				break;
-		}
-		temp2->left = leaf;
-		temp2->left->parent = temp2;
+			} else {
+				temp = mass->right;
+				temp2 = mass->right;
+				mass = mass->right;
+			}
+		} while(1);
 	}
 	return;
 }
@@ -86,19 +93,21 @@ void swap_node(node *tree) {
 }
 
 void numbering_node(node **tree, int number, int deep) {
+//	std::cout << number << "" << (*tree)->symbol << " " << deep << '\n';
+	
 	if (*tree == NULL)
 		return;
 	else
 		(*tree)->number = number;
 	
 	if ((*tree)->right != NULL) {
-		numbering_node(&(*tree)->right, number - 1, deep+1);
+		numbering_node(&(*tree)->right, number-1, deep+1);
 	} else {
 		return;
 	}
 	
 	if ((*tree)->left != NULL) {
-		numbering_node(&(*tree)->left, number - 2, deep+1);
+		numbering_node(&(*tree)->left, number-2, deep+1);
 	} else {
 		return;
 	}
@@ -137,12 +146,12 @@ void print_tree(node **tree, int deep) {
 	if((*tree)->right != NULL)
 		print_tree(&(*tree)->right, deep+1);
 	
-	printf("%d 0x%2x %d %d\n", deep, (*tree)->symbol, (*tree)->number, (*tree)->weight);
+	printf("%d 0x%2x %c %d %d\n", deep, (*tree)->symbol, (*tree)->symbol, (*tree)->number, (*tree)->weight);
 	
 	return;
 }
 
-void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary) {
+void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, int *num) {
 	// search in dictionary
 	std::vector<unsigned char>::iterator it;
 	it = std::search_n ((*dictionary).begin(), (*dictionary).end(), 1, symbol);
@@ -154,9 +163,15 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		find_external_symbol(&*tree, symbol, &temp);
 		
 //		std::cout << temp->number;
+	
+		if (temp->parent->left->weight == temp->parent->right->weight) {
+			swap_node(temp->parent);
+		}
 		increment_weight(&temp);
+	
 				
 	} else {
+//		std::cout << symbol << '\n';
 		node *new_nyt;
 		create_node(&new_nyt, 0x00, true);
 		node *new_node;
@@ -167,7 +182,8 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		
 		insert_node(&*tree, old_nyt);
 		
-		numbering_node(&*tree, NUMBER, 0);
+		numbering_node(&old_nyt, *num, 0);
+		*num = old_nyt->left->number;
 //		print_tree(&*tree, 0);
 		
 		// goto old nyt
@@ -179,10 +195,13 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 	}
 	
 	while(temp->parent != NULL) {
+		// go to parent node
 		temp = temp->parent;
+		
+		// if not root
 		if (temp->parent != NULL)
 		{
-			if (temp->parent->left->number < temp->parent->right->number) {
+			if (temp->parent->left->weight == temp->parent->right->weight) {
 //				std::cout << temp->parent->left->number << " " << temp->parent->right->number << '\n';
 //				std::cout << temp->parent->left->weight << " " << temp->parent->right->weight << '\n';
 				swap_node(temp->parent);
@@ -211,16 +230,22 @@ int main() {
 
 	std::vector<unsigned char> dictionary;
 	
-	update(&root, (unsigned char)0x22, &dictionary);
+	int num = NUMBER;
 	
-	update(&root, (unsigned char)0x25, &dictionary);
+	update(&root, (unsigned char)'a', &dictionary, &num);
+	
+	update(&root, (unsigned char)'a', &dictionary, &num);
 
-	update(&root, (unsigned char)0x22, &dictionary);
+	update(&root, (unsigned char)'r', &dictionary, &num);
 	
-	update(&root, (unsigned char)0x22, &dictionary);
+	update(&root, (unsigned char)'d', &dictionary, &num);
 	
-	update(&root, (unsigned char)0x27, &dictionary);
-	
+	update(&root, (unsigned char)'v', &dictionary, &num);
+
+	update(&root, (unsigned char)'j', &dictionary, &num);
+
+	update(&root, (unsigned char)'j', &dictionary, &num);
+			
 	print_tree(&root, 0);
 	
 	return 0;
