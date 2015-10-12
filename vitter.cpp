@@ -46,27 +46,23 @@ void create_node(node **leaf, unsigned char symbol, bool is_nyt) {
 void insert_node(node **root, node *leaf) {
 	if (*root == NULL) {
 		*root = leaf;
+		return;
+	
 	} else {
-		node *mass = *root;
-		node *temp = *root;
-		node *temp2 = *root;
-		do {
-			while(temp->left != NULL) {
-				temp2 = temp;
-				temp = temp->left;
-			}
-			if (temp2->left->weight == 0) {
-				temp2->left = leaf;
-				temp2->left->parent = temp2;
-				break;
-			} else {
-				temp = mass->right;
-				temp2 = mass->right;
-				mass = mass->right;
-			}
-		} while(1);
+		if ((*root)->weight == 0) {
+			leaf->parent = (*root)->parent;
+			(*root)->parent->left = leaf;
+			return;
+		}
+		
+		if ((*root)->left != NULL) {
+			insert_node(&(*root)->left, leaf);
+		}
+		
+		if ((*root)->right != NULL) {
+			insert_node(&(*root)->right, leaf);
+		}
 	}
-	return;
 }
 
 void merge_node(node **tree, node *left, node *right) {
