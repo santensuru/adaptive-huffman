@@ -184,7 +184,20 @@ void print_tree(node **tree, int deep) {
 	if((*tree)->right != NULL)
 		print_tree(&(*tree)->right, deep+1);
 	
-	printf("%d 0x%2x %c %d %d\n", deep, (*tree)->symbol, (*tree)->symbol, (*tree)->number, (*tree)->weight);
+	char symbol_re[3];
+	sprintf(symbol_re, "%2x", (*tree)->symbol);
+	
+	if (symbol_re[0] == ' ')
+		symbol_re[0] = '0';
+	
+	printf("%d 0x%s %c %d %3d", deep, symbol_re, (*tree)->symbol, (*tree)->number, (*tree)->weight);
+	
+	if ((*tree)->weight == 0)
+		std::cout << " << NYT";
+	else if ((*tree)->left == NULL)
+		printf(" << 0x%s", symbol_re);
+	
+	std::cout << '\n';
 	
 	return;
 }
@@ -364,8 +377,11 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		get_standard_code(symbol, code);
 		
 		strcat(all_codes, "(");
-		if(strlen(nyt_code) > 0)
+		if(strlen(nyt_code) > 0) {
 			strcat(all_codes, nyt_code);
+			strcat(all_codes, "-");
+		}
+		
 		strcat(all_codes, code);
 		strcat(all_codes, ")");
 		
@@ -384,7 +400,7 @@ int main() {
 	create_node(&nyt, 0x00, true);
 
 	std::vector<unsigned char> dictionary;
-	char all_codes[NUMBER * 4];
+	char all_codes[NUMBER * 8];
 	char nyt_code[SYMBOL];
 	
 	memset(all_codes, 0, NUMBER * 4);
@@ -395,15 +411,35 @@ int main() {
 	
 //	std::cout << strlen(nyt_code);
 	
-	encode(&root, (unsigned char)'a', &dictionary, all_codes, nyt_code);
+//	encode(&root, (unsigned char)'a', &dictionary, all_codes, nyt_code);
+//	
+//	encode(&root, (unsigned char)'a', &dictionary, all_codes, nyt_code);
+//	
+//	encode(&root, (unsigned char)'r', &dictionary, all_codes, nyt_code);
+//	
+//	encode(&root, (unsigned char)'d', &dictionary, all_codes, nyt_code);
+//	
+//	encode(&root, (unsigned char)'v', &dictionary, all_codes, nyt_code);
+//	
+//	encode(&root, (unsigned char)'j', &dictionary, all_codes, nyt_code);
+//	
+//	encode(&root, (unsigned char)'j', &dictionary, all_codes, nyt_code);
+//	
+//	encode(&root, (unsigned char)'j', &dictionary, all_codes, nyt_code);
+//	
+//	encode(&root, (unsigned char)'j', &dictionary, all_codes, nyt_code);
+//	
+//	encode(&root, (unsigned char)0x00, &dictionary, all_codes, nyt_code);
+//	
+//	encode(&root, (unsigned char)0xff, &dictionary, all_codes, nyt_code);
 	
-	encode(&root, (unsigned char)'a', &dictionary, all_codes, nyt_code);
+//	for (int i=0; i<53; i++) {
+//		encode(&root, (unsigned char)i, &dictionary, all_codes, nyt_code);
+//	}
 	
-	encode(&root, (unsigned char)'r', &dictionary, all_codes, nyt_code);
-	
-	encode(&root, (unsigned char)'d', &dictionary, all_codes, nyt_code);
-	
-	encode(&root, (unsigned char)'v', &dictionary, all_codes, nyt_code);
+	for (int i=0; i<512; i++) {
+		encode(&root, (unsigned char)i%10, &dictionary, all_codes, nyt_code);
+	}
 	
 //	update(&root, (unsigned char)'a', &dictionary);
 //	
@@ -424,9 +460,14 @@ int main() {
 //	update(&root, (unsigned char)'j', &dictionary);
 //	
 //	update(&root, (unsigned char)'a', &dictionary);
-					
-	print_tree(&root, 0);
 	
+	std::cout << "m = 2^e + r, m = 256 -> e = 8, r = 0" << '\n' << '\n';
+	
+	std::cout << "huffman tree" << '\n' << '\n'; 
+	print_tree(&root, 0);
+	std::cout << '\n';
+	
+	std::cout << "string representation" << '\n' << '\n'; 
 	std::cout << all_codes << '\n';
 	
 	return 0;
