@@ -23,6 +23,10 @@ typedef struct node{
 	     *right;          // anak kanan
 } node;
 
+/**
+ * UPDATE
+ */
+
 typedef std::pair<int, node*> my_pair;
 
 void create_node(node **leaf, unsigned char symbol, bool is_nyt) {
@@ -248,8 +252,8 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 	increment_weight(&temp);
 	
 	// for checking tree
-	print_tree(&*tree, 0);
-	std::cout << '\n';
+//	print_tree(&*tree, 0);
+//	std::cout << '\n';
 	
 	while(temp->parent != NULL) {
 		// go to parent node
@@ -288,13 +292,89 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		}
 		
 		// for checkint tree
-		print_tree(&*tree, 0);
-		std::cout << '\n';
+//		print_tree(&*tree, 0);
+//		std::cout << '\n';
 	}
 	
 	*tree = temp;
 	
 	return;
+}
+
+/**
+ * ENCODE
+ */
+
+void get_the_code(node **tree, unsigned char symbol, char *do_code, char *code) {
+	char temp[SYMBOL];
+	if ((*tree)->symbol == symbol && (*tree)->left == NULL && (*tree)->right == NULL) {
+		strcpy(code, do_code);
+		return;
+	}
+	
+	strcpy(temp, do_code);
+	if ((*tree)->left != NULL) {
+		get_the_code(&(*tree)->left, symbol, strcat(temp, "0"), code);
+	}
+	
+	strcpy(temp, do_code);
+	if ((*tree)->right != NULL) {
+		get_the_code(&(*tree)->right, symbol, strcat(temp, "1"), code);
+	}
+		
+	return;
+}
+
+void get_standard_code(unsigned char symbol, char *code) {
+	unsigned char temp;
+	for (int i=7; i>=0; i--) {
+		temp = symbol & 0x01;
+		if (temp == 0x01) {
+			code[i+1] = '1';
+		} else {
+			code[i+1] = '0';
+		}
+		symbol = symbol >> 1;
+	}
+	code[0] = '0';
+	
+	return;
+}
+
+void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, char *all_codes, char *nyt_code) {
+	// search in dictionary
+	std::vector<unsigned char>::iterator it;
+	it = std::search_n ((*dictionary).begin(), (*dictionary).end(), 1, symbol);
+	
+	// symbol exist
+	if (it != (*dictionary).end()) {
+		char do_code[SYMBOL] = "";
+		char code[SYMBOL] = "";
+		
+		get_the_code(&*tree, symbol, do_code, code);
+		
+		strcat(all_codes, "(");
+		strcat(all_codes, code);
+		strcat(all_codes, ")");
+		
+	} else {
+		char code[10];
+		code[9] = '\0';
+		
+		get_standard_code(symbol, code);
+		
+		strcat(all_codes, "(");
+		if(strlen(nyt_code) > 0)
+			strcat(all_codes, nyt_code);
+		strcat(all_codes, code);
+		strcat(all_codes, ")");
+		
+		strncat(nyt_code, "0", 1);
+		
+	}
+	
+	// call update procedure
+	update(&*tree, symbol, &*dictionary);
 }
 
 int main() {
@@ -304,28 +384,50 @@ int main() {
 	create_node(&nyt, 0x00, true);
 
 	std::vector<unsigned char> dictionary;
+	char all_codes[NUMBER * 4];
+	char nyt_code[SYMBOL];
 	
-	update(&root, (unsigned char)'a', &dictionary);
+	memset(all_codes, 0, NUMBER * 4);
+	memset(nyt_code, 0, SYMBOL);
 	
-	update(&root, (unsigned char)'a', &dictionary);
-
-	update(&root, (unsigned char)'r', &dictionary);
+	strncpy(all_codes, "", 1);
+	strncpy(nyt_code, "", 1);
 	
-	update(&root, (unsigned char)'d', &dictionary);
+//	std::cout << strlen(nyt_code);
 	
-	update(&root, (unsigned char)'v', &dictionary);
-
-	update(&root, (unsigned char)'j', &dictionary);
-
-	update(&root, (unsigned char)'j', &dictionary);
-
+	encode(&root, (unsigned char)'a', &dictionary, all_codes, nyt_code);
+	
+	encode(&root, (unsigned char)'a', &dictionary, all_codes, nyt_code);
+	
+	encode(&root, (unsigned char)'r', &dictionary, all_codes, nyt_code);
+	
+	encode(&root, (unsigned char)'d', &dictionary, all_codes, nyt_code);
+	
+	encode(&root, (unsigned char)'v', &dictionary, all_codes, nyt_code);
+	
+//	update(&root, (unsigned char)'a', &dictionary);
+//	
+//	update(&root, (unsigned char)'a', &dictionary);
+//
+//	update(&root, (unsigned char)'r', &dictionary);
+//	
+//	update(&root, (unsigned char)'d', &dictionary);
+//	
+//	update(&root, (unsigned char)'v', &dictionary);
+//
 //	update(&root, (unsigned char)'j', &dictionary);
 //
 //	update(&root, (unsigned char)'j', &dictionary);
-	
+//
+//	update(&root, (unsigned char)'j', &dictionary);
+//
+//	update(&root, (unsigned char)'j', &dictionary);
+//	
 //	update(&root, (unsigned char)'a', &dictionary);
 					
 	print_tree(&root, 0);
+	
+	std::cout << all_codes << '\n';
 	
 	return 0;
 }
