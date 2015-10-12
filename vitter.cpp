@@ -58,7 +58,6 @@ void insert_node(node **root, node *leaf) {
 			if (temp2->left->weight == 0) {
 				temp2->left = leaf;
 				temp2->left->parent = temp2;
-//				printf(">> %c %c\n", temp2->left->right->symbol, leaf->right->symbol);
 				break;
 			} else {
 				temp = mass->right;
@@ -83,137 +82,62 @@ void merge_node(node **tree, node *left, node *right) {
 	return;
 }
 
-/**
- * TODO
- */
-void search_higher_block(node **tree, int weight, int *number, int parent_number, node **position) {
-//	if ((*tree)->weight == weight)
-//		std::cout << (*tree)->number << " " << *number << '\n';
+void search_higher_block(node **tree, int weight, int *number, int parent_number, node **position, char *l_r) {
 	if ((*tree)->weight == weight && (*tree)->number > *number && (*tree)->number != parent_number) {
 		*position = (*tree)->parent;
 		*number = (*tree)->number;
-//		std::cout << (*tree)->number;
-//		std::cout << (*position)->left->number << " " << (*position)->right->number;
+		if ((*tree)->parent->left->number == (*tree)->number) {
+			strcpy(l_r, "left");
+		} else {
+			strcpy(l_r, "right");
+		}
 	}
 	
 	if ((*tree)->left != NULL)
-		search_higher_block(&(*tree)->left, weight, &*number, parent_number, &*position);
+		search_higher_block(&(*tree)->left, weight, &*number, parent_number, &*position, l_r);
 	
 	if ((*tree)->right != NULL)
-		search_higher_block(&(*tree)->right, weight, &*number, parent_number, &*position);
+		search_higher_block(&(*tree)->right, weight, &*number, parent_number, &*position, l_r);
 		
 	return;
 }
 
-void switch_node(node *tree, char *l_r, node *sibling_parent, unsigned char symbol) {
-//	std::cout << tree->left->symbol;
-	
-	if (strcmp(l_r, "left") == 0) {
-		// one parent
-		if (sibling_parent->left->number == tree->left->number) {
-			node *temp = tree->left;
-			tree->left = tree->right;
-			tree->right = temp;
+void switch_node(node *tree, char *l_r, node *sibling, char *l_r_sibling) {	
+	if (strcmp(l_r, "left") == 0 && strcmp(l_r_sibling, "left") == 0) {
+		node *temp = tree->left;
+		tree->left = sibling->left;
+		sibling->left = temp;
 		
-			int temp_n = tree->left->number;
-			tree->left->number = tree->right->number;
-			tree->right->number = temp_n;
+		tree->left->parent = tree;
+		sibling->left->parent = sibling;
 		
-		// left left
-		} else if (tree->left->symbol == symbol) {
-			node *temp = tree->left;
-			tree->left = sibling_parent->left;
-			tree->left->parent = sibling_parent;
-			sibling_parent->left = temp;
-			sibling_parent->left->parent = tree;
-			
-			int temp_n = tree->left->number;
-			tree->left->number = sibling_parent->left->number;
-			sibling_parent->left->number = temp_n;
+	} else if (strcmp(l_r, "left") == 0) {
+		node *temp = tree->left;
+		tree->left = sibling->right;
+		sibling->right = temp;
 		
-		// left right
-		} else {
-			node *temp = tree->right;
-			tree->right = sibling_parent->left;
-			tree->right->parent = sibling_parent;
-			sibling_parent->left = temp;
-			sibling_parent->left->parent = tree;
-			
-			int temp_n = tree->right->number;
-			tree->right->number = sibling_parent->left->number;
-			sibling_parent->left->number = temp_n;
-		}
+		tree->left->parent = tree;
+		sibling->right->parent = sibling;
+		
+	} else if (strcmp(l_r_sibling, "left") == 0) {
+		node *temp = tree->right;
+		tree->right = sibling->left;
+		sibling->left = temp;
+		
+		tree->right->parent = tree;
+		sibling->left->parent = sibling;
+		
 	} else {
-		// one parent
-		if (sibling_parent->right->number == tree->right->number) {
-			node *temp = tree->left;
-			tree->left = tree->right;
-			tree->right = temp;
+		node *temp = tree->right;
+		tree->right = sibling->right;
+		sibling->right = temp;
 		
-			int temp_n = tree->left->number;
-			tree->left->number = tree->right->number;
-			tree->right->number = temp_n;
+		tree->right->parent = tree;
+		sibling->right->parent = sibling;
 		
-		// right left
-		} else if (tree->left->symbol == symbol) {
-			node *temp = tree->left;
-			tree->left = sibling_parent->right;
-			tree->left->parent = sibling_parent;
-			sibling_parent->right = temp;
-			sibling_parent->right->parent = tree;
-			
-			int temp_n = tree->left->number;
-			tree->left->number = sibling_parent->right->number;
-			sibling_parent->right->number = temp_n;
-		
-		// right right
-		} else {
-			node *temp = tree->right;
-			tree->right = sibling_parent->right;
-			tree->right->parent = sibling_parent;
-			sibling_parent->right = temp;
-			sibling_parent->right->parent = tree;
-			
-			int temp_n = tree->right->number;
-			tree->right->number = sibling_parent->right->number;
-			sibling_parent->right->number = temp_n;
-		}
 	}
 
 	return;
-}
-
-void swap_node(node *tree) {
-	node *temp = tree->left;
-	tree->left = tree->right;
-	tree->right = temp;
-	
-	int temp_n = tree->left->number;
-	tree->left->number = tree->right->number;
-	tree->right->number = temp_n;
-	
-	return;
-}
-
-void numbering_node(node **tree, int number, int deep) {
-//	std::cout << number << "" << (*tree)->symbol << " " << deep << '\n';
-	
-	if (*tree == NULL)
-		return;
-	else
-		(*tree)->number = number;
-	
-	if ((*tree)->right != NULL) {
-		numbering_node(&(*tree)->right, number-1, deep+1);
-	} else {
-		return;
-	}
-	
-	if ((*tree)->left != NULL) {
-		numbering_node(&(*tree)->left, number-2, deep+1);
-	} else {
-		return;
-	}
 }
 
 void queueing_node(node **tree, std::vector<my_pair> *queue, int deep) {
@@ -240,13 +164,10 @@ void increment_weight(node **tree) {
 }
 
 void find_external_symbol(node **tree, unsigned char symbol, node **position) {
-//	std::cout << (*tree)->symbol << " " << symbol << '\n';
-	
 	if ((*tree)->left != NULL)
 		find_external_symbol(&(*tree)->left, symbol, &*position);
 		
 	if ((*tree)->symbol == symbol) {
-//		std::cout << (*tree)->number;
 		*position = *tree;
 	}
 	
@@ -283,49 +204,22 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 	if (it != (*dictionary).end()) {
 		find_external_symbol(&*tree, symbol, &temp);
 		
-//		std::cout << temp->number;
-	
 		node *inner_temp = NULL;
-		
-		if (temp->parent->right->symbol == symbol) {
-			int number = temp->parent->right->number;
-			search_higher_block(&*tree, temp->parent->right->weight, &number, temp->parent->number, &inner_temp);
-			if (inner_temp != NULL) {
-				std::cout<< inner_temp->right->number;
-				switch_node(temp->parent, (char*)"right", inner_temp, symbol);
-			}
-	
-//			std::cout << inner_temp << " " << symbol << " right" << '\n';
+		char l_r[10];
+		if (temp->parent->left->number == temp->number) {
+			strcpy(l_r, "left");
 		} else {
-			int number = temp->parent->left->number;
-			search_higher_block(&*tree, temp->parent->left->weight, &number, temp->parent->number, &inner_temp);
-			if (inner_temp != NULL) {
-				std::cout<< inner_temp->left->number;
-				switch_node(temp->parent, (char*)"left", inner_temp, symbol);
-			}
-			
-//			std::cout << inner_temp << " " << symbol << " left" << '\n';
+			strcpy(l_r, "right");
 		}
 		
-//		if (temp->parent->left->weight == temp->parent->right->weight) {
-//			swap_node(temp->parent);
-//		}
-		increment_weight(&temp);
-		
-		std::vector<my_pair> queue;
-		queueing_node(&*tree, &queue, 0);
-		
-		std::sort(queue.begin(), queue.end(), my_sort);
-		
-		int num = NUMBER;
-		for (int i=0; i<queue.size(); i++) {
-			queue.at(i).second->number = num--;
-//			std::cout << queue.at(i).first << " " << queue.at(i).second->number << '\n';
+		char l_r_sibling[10];
+		int number = temp->number;
+		search_higher_block(&*tree, temp->weight, &number, temp->parent->number, &inner_temp, l_r_sibling);
+		if (inner_temp != NULL) {
+			switch_node(temp->parent, l_r, inner_temp, l_r_sibling);
 		}
-	
 				
 	} else {
-//		std::cout << symbol << '\n';
 		node *new_nyt;
 		create_node(&new_nyt, 0x00, true);
 		node *new_node;
@@ -336,30 +230,28 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		
 		insert_node(&*tree, old_nyt);
 		
+		// goto old nyt
+		temp = old_nyt;
+		
+		// give number
 		std::vector<my_pair> queue;
 		queueing_node(&*tree, &queue, 0);
-		
 		std::sort(queue.begin(), queue.end(), my_sort);
 		
 		int num = NUMBER;
 		for (int i=0; i<queue.size(); i++) {
 			queue.at(i).second->number = num--;
-//			std::cout << queue.at(i).first << " " << queue.at(i).second->number << '\n';
-//			std::cout << queue.at(i).second->symbol << " " << queue.at(i).second->weight << " " << queue.at(i).second->number << '\n';
+//			std::cout << queue.at(i).second->symbol << " " << queue.at(i).second->number << '\n';
 		}
-		
-//		numbering_node(&*tree, NUMBER, 0);
-		
-//		print_tree(&*tree, 0);
-		
-		// goto old nyt
-		temp = old_nyt;
-		increment_weight(&temp);
 		
 		(*dictionary).push_back(symbol);
 
 	}
 	
+	// increment weight
+	increment_weight(&temp);
+	
+	// for checking tree
 	print_tree(&*tree, 0);
 	std::cout << '\n';
 	
@@ -367,38 +259,27 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		// go to parent node
 		temp = temp->parent;
 		
-//		std::cout << (temp->symbol);
-		
 		// if not root
 		if (temp->parent != NULL)
 		{
 			node *inner_temp = NULL;
 			
-			if (temp->parent->right->symbol == symbol) {
-				int number = temp->parent->right->number;
-				search_higher_block(&*tree, temp->parent->right->weight, &number, temp->parent->number, &inner_temp);
-				if (inner_temp != NULL) {
-					switch_node(temp->parent, (char*)"right", inner_temp, temp->symbol);
-				}
-		
-//				std::cout << inner_temp << " " << symbol << " right" << '\n';
+			char l_r[10];
+			if (temp->parent->left->number == temp->number) {
+				strcpy(l_r, "left");
 			} else {
-				int number = temp->parent->left->number;
-				search_higher_block(&*tree, temp->parent->left->weight, &number, temp->parent->number, &inner_temp);
-				if (inner_temp != NULL) {
-					switch_node(temp->parent, (char*)"left", inner_temp, temp->symbol);
-				}
-				
-//				std::cout << inner_temp << " " << symbol << " left" << '\n';
+				strcpy(l_r, "right");
 			}
 			
-//			if (temp->parent->left->weight == temp->parent->right->weight) {
-////				std::cout << temp->parent->left->number << " " << temp->parent->right->number << '\n';
-////				std::cout << temp->parent->left->weight << " " << temp->parent->right->weight << '\n';
-//				swap_node(temp->parent);
-//			}
-			increment_weight(&temp);
+			char l_r_sibling[10];
+			int number = temp->number;
+			search_higher_block(&*tree, temp->weight, &number, temp->parent->number, &inner_temp, l_r_sibling);
+			if (inner_temp != NULL) {
+				switch_node(temp->parent, l_r, inner_temp, l_r_sibling);
+			}
+			
 		}
+		increment_weight(&temp);
 		
 		std::vector<my_pair> queue;
 		queueing_node(&*tree, &queue, 0);
@@ -409,19 +290,14 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		for (int i=0; i<queue.size(); i++) {
 			queue.at(i).second->number = num--;
 		}
+		
+		// for checkint tree
 		print_tree(&*tree, 0);
 		std::cout << '\n';
 	}
 	
-	increment_weight(&temp);
 	*tree = temp;
 	
-	// to print the tree, after update
-//	print_tree(&*tree, 0);
-//	std::cout << '\n';
-	
-//	std::cout << (*tree)->right->symbol << '\n';
-
 	return;
 }
 
@@ -446,10 +322,12 @@ int main() {
 	update(&root, (unsigned char)'j', &dictionary);
 
 	update(&root, (unsigned char)'j', &dictionary);
-//
+
 //	update(&root, (unsigned char)'j', &dictionary);
 //
 //	update(&root, (unsigned char)'j', &dictionary);
+	
+//	update(&root, (unsigned char)'a', &dictionary);
 					
 	print_tree(&root, 0);
 	
