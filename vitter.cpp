@@ -540,7 +540,7 @@ void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char
 		unsigned char symbol[1];
 		get_char_from_code(&*code_read, symbol);
 		write_to_file_instansly(&*out_file, symbol[0]);
-		printf("%2x", symbol[0]);
+//		printf("%2x", symbol[0]);
 		
 		// call update procedure
 		update(&*tree, symbol[0], &*dictionary);
@@ -605,6 +605,8 @@ bool read_from_file_instansly(std::ifstream *file, unsigned char *symbol) {
 }
 
 int main() {
+	// ENCODE
+	
 	node *root;
 	root = NULL;
 
@@ -617,36 +619,6 @@ int main() {
 	std::cout << "m = 2^e + r, m = 256 -> e = 8, r = 0" << '\n' << '\n';
 	
 	std::cout << "string representation" << '\n' << '\n';
-	
-//	encode(&root, (unsigned char)'a', &dictionary, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'a', &dictionary, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'r', &dictionary, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'d', &dictionary, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'v', &dictionary, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'j', &dictionary, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'j', &dictionary, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'j', &dictionary, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'j', &dictionary, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)0x00, &dictionary, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)0xff, &dictionary, &code_write, &file);
-	
-//	for (int i=0; i<1024; i++) {
-//		encode(&root, (unsigned char)i%128+64, &dictionary, &code_write, &file);
-//	}
-	
-//	for (int i=0; i<26*10; i++) {
-//		encode(&root, (unsigned char)(i%26+'a'), &dictionary, &code_write, &file);
-//	}
 	
 	std::ifstream file_in;
 	
@@ -689,6 +661,8 @@ int main() {
 	}
 	
 	file.close();
+	
+	// DECODE
 	
 	file.open("restore.txt", std::ios::out | std::ios::binary);
 	
