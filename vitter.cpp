@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <vector>
 #include <cstring>
+#include <fstream>
+#include <queue>
 
 #define SYMBOL 256
 #define NUMBER 512
@@ -354,7 +356,22 @@ void get_standard_code(unsigned char symbol, char *code) {
 	return;
 }
 
-void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, char *all_codes, char *nyt_code) {
+void write_to_file(std::ofstream *file, char *byte) {
+	unsigned char temp;
+	temp = temp & 0x00;
+	for (int i=0; i<8; i++) {
+		if (byte[i] == '1') {
+			temp = temp ^ 0x01;
+		}
+		
+		if (i != 7) {
+			temp = temp << 1;
+		}
+	}
+	*file << temp;
+}
+
+void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, char *all_codes, std::queue<char> *code_write, char *nyt_code, std::ofstream *file) {
 	// search in dictionary
 	std::vector<unsigned char>::iterator it;
 	it = std::search_n ((*dictionary).begin(), (*dictionary).end(), 1, symbol);
@@ -369,6 +386,10 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		strcat(all_codes, "(");
 		strcat(all_codes, code);
 		strcat(all_codes, ")");
+		
+		for (int i=0; i<strlen(code); i++) {
+			(*code_write).push(code[i]);
+		}
 		
 	} else {
 		char code[10];
@@ -385,12 +406,30 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		strcat(all_codes, code);
 		strcat(all_codes, ")");
 		
+		for (int i=0; i<strlen(nyt_code); i++) {
+			(*code_write).push(nyt_code[i]);
+		}
+		
+		for (int i=0; i<strlen(code); i++) {
+			(*code_write).push(code[i]);
+		}
+				
 		strncat(nyt_code, "0", 1);
 		
 	}
 	
 	// call update procedure
 	update(&*tree, symbol, &*dictionary);
+	
+	// write to file
+	while ((*code_write).size() > 8) {
+		char code_to_write[8];
+		for (int i=0; i<8; i++) {
+			code_to_write[i] = (*code_write).front();
+			(*code_write).pop();
+		}
+		write_to_file(&*file, code_to_write);
+	}
 }
 
 int main() {
@@ -400,6 +439,7 @@ int main() {
 	create_node(&nyt, 0x00, true);
 
 	std::vector<unsigned char> dictionary;
+	std::queue<char> code_write;
 	char all_codes[NUMBER * 8];
 	char nyt_code[SYMBOL];
 	
@@ -411,34 +451,37 @@ int main() {
 	
 //	std::cout << strlen(nyt_code);
 	
-//	encode(&root, (unsigned char)'a', &dictionary, all_codes, nyt_code);
+	std::ofstream file;
+	file.open("temp.ah", std::ios::out | std::ios::binary);
+	
+//	encode(&root, (unsigned char)'a', &dictionary, all_codes, &code_write, nyt_code, &file);
 //	
-//	encode(&root, (unsigned char)'a', &dictionary, all_codes, nyt_code);
+//	encode(&root, (unsigned char)'a', &dictionary, all_codes, &code_write, nyt_code, &file);
 //	
-//	encode(&root, (unsigned char)'r', &dictionary, all_codes, nyt_code);
+//	encode(&root, (unsigned char)'r', &dictionary, all_codes, &code_write, nyt_code, &file);
 //	
-//	encode(&root, (unsigned char)'d', &dictionary, all_codes, nyt_code);
+//	encode(&root, (unsigned char)'d', &dictionary, all_codes, &code_write, nyt_code, &file);
 //	
-//	encode(&root, (unsigned char)'v', &dictionary, all_codes, nyt_code);
+//	encode(&root, (unsigned char)'v', &dictionary, all_codes, &code_write, nyt_code, &file);
 //	
-//	encode(&root, (unsigned char)'j', &dictionary, all_codes, nyt_code);
+//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, nyt_code, &file);
 //	
-//	encode(&root, (unsigned char)'j', &dictionary, all_codes, nyt_code);
+//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, nyt_code, &file);
 //	
-//	encode(&root, (unsigned char)'j', &dictionary, all_codes, nyt_code);
+//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, nyt_code, &file);
 //	
-//	encode(&root, (unsigned char)'j', &dictionary, all_codes, nyt_code);
+//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, nyt_code, &file);
 //	
-//	encode(&root, (unsigned char)0x00, &dictionary, all_codes, nyt_code);
+//	encode(&root, (unsigned char)0x00, &dictionary, all_codes, &code_write, nyt_code, &file);
 //	
-//	encode(&root, (unsigned char)0xff, &dictionary, all_codes, nyt_code);
+//	encode(&root, (unsigned char)0xff, &dictionary, all_codes, &code_write, nyt_code, &file);
 	
 //	for (int i=0; i<53; i++) {
-//		encode(&root, (unsigned char)i, &dictionary, all_codes, nyt_code);
+//		encode(&root, (unsigned char)i, &dictionary, all_codes, &code_write, nyt_code, &file);
 //	}
 	
 	for (int i=0; i<512; i++) {
-		encode(&root, (unsigned char)i%10, &dictionary, all_codes, nyt_code);
+		encode(&root, (unsigned char)i%26+'a', &dictionary, all_codes, &code_write, nyt_code, &file);
 	}
 	
 //	update(&root, (unsigned char)'a', &dictionary);
@@ -468,7 +511,31 @@ int main() {
 	std::cout << '\n';
 	
 	std::cout << "string representation" << '\n' << '\n'; 
-	std::cout << all_codes << '\n';
+	std::cout << all_codes << '\n' << '\n';
 	
+	int offset = code_write.size();
+	std::cout << "sisa " << offset << " bit" << '\n';
+	
+	// write to file for offset
+	if (code_write.size() > 0) {
+		while (code_write.size() < 8) {
+			code_write.push('0');
+		}
+		
+		char code_to_write[8];
+		for (int i=0; i<8; i++) {
+			if (i == offset)
+				std::cout << "-";
+			std::cout << code_write.front();
+			code_to_write[i] = code_write.front();
+			code_write.pop();
+			
+		}
+			
+		write_to_file(&file, code_to_write);
+	}
+	
+	file.close();
+
 	return 0;
 }
