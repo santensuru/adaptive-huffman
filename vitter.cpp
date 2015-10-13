@@ -329,12 +329,32 @@ void get_the_code(node **tree, unsigned char symbol, char *do_code, char *code) 
 	
 	strcpy(temp, do_code);
 	if ((*tree)->left != NULL) {
-		get_the_code(&(*tree)->left, symbol, strcat(temp, "0"), code);
+		get_the_code(&(*tree)->left, symbol, strncat(temp, "0", 1), code);
 	}
 	
 	strcpy(temp, do_code);
 	if ((*tree)->right != NULL) {
-		get_the_code(&(*tree)->right, symbol, strcat(temp, "1"), code);
+		get_the_code(&(*tree)->right, symbol, strncat(temp, "1", 1), code);
+	}
+		
+	return;
+}
+
+void get_nyt_code(node **tree, char *do_code, char *code) {
+	char temp[SYMBOL];
+	if ((*tree)->weight == 0 && (*tree)->left == NULL && (*tree)->right == NULL) {
+		strcpy(code, do_code);
+		return;
+	}
+	
+	strcpy(temp, do_code);
+	if ((*tree)->left != NULL) {
+		get_nyt_code(&(*tree)->left, strncat(temp, "0", 1), code);
+	}
+	
+	strcpy(temp, do_code);
+	if ((*tree)->right != NULL) {
+		get_nyt_code(&(*tree)->right, strncat(temp, "1", 1), code);
 	}
 		
 	return;
@@ -342,16 +362,26 @@ void get_the_code(node **tree, unsigned char symbol, char *do_code, char *code) 
 
 void get_standard_code(unsigned char symbol, char *code) {
 	unsigned char temp;
+//	for (int i=7; i>=0; i--) {
+//		temp = symbol & 0x01;
+//		if (temp == 0x01) {
+//			code[i+1] = '1';
+//		} else {
+//			code[i+1] = '0';
+//		}
+//		symbol = symbol >> 1;
+//	}
+//	code[0] = '0';
+	
 	for (int i=7; i>=0; i--) {
 		temp = symbol & 0x01;
 		if (temp == 0x01) {
-			code[i+1] = '1';
+			code[i] = '1';
 		} else {
-			code[i+1] = '0';
+			code[i] = '0';
 		}
 		symbol = symbol >> 1;
 	}
-	code[0] = '0';
 	
 	return;
 }
@@ -371,7 +401,7 @@ void write_to_file(std::ofstream *file, char *byte) {
 	*file << temp;
 }
 
-void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, char *all_codes, std::queue<char> *code_write, char *nyt_code, std::ofstream *file) {
+void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, char *all_codes, std::queue<char> *code_write, std::ofstream *file) {
 	// search in dictionary
 	std::vector<unsigned char>::iterator it;
 	it = std::search_n ((*dictionary).begin(), (*dictionary).end(), 1, symbol);
@@ -392,8 +422,15 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		}
 		
 	} else {
+		char do_code[SYMBOL] = "";
+		char nyt_code[SYMBOL] = "";
+		
+		if (*tree != NULL)
+			get_nyt_code(&*tree, do_code, nyt_code);
+		
 		char code[10];
-		code[9] = '\0';
+//		code[9] = '\0';
+		code[8] = '\0';
 		
 		get_standard_code(symbol, code);
 		
@@ -413,8 +450,6 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		for (int i=0; i<strlen(code); i++) {
 			(*code_write).push(code[i]);
 		}
-				
-		strncat(nyt_code, "0", 1);
 		
 	}
 	
@@ -440,48 +475,45 @@ int main() {
 
 	std::vector<unsigned char> dictionary;
 	std::queue<char> code_write;
-	char all_codes[NUMBER * 8];
-	char nyt_code[SYMBOL];
+	char all_codes[NUMBER * 16];
 	
 	memset(all_codes, 0, NUMBER * 4);
-	memset(nyt_code, 0, SYMBOL);
 	
 	strncpy(all_codes, "", 1);
-	strncpy(nyt_code, "", 1);
 	
 //	std::cout << strlen(nyt_code);
 	
 	std::ofstream file;
 	file.open("temp.ah", std::ios::out | std::ios::binary);
 	
-//	encode(&root, (unsigned char)'a', &dictionary, all_codes, &code_write, nyt_code, &file);
+//	encode(&root, (unsigned char)'a', &dictionary, all_codes, &code_write, &file);
 //	
-//	encode(&root, (unsigned char)'a', &dictionary, all_codes, &code_write, nyt_code, &file);
+//	encode(&root, (unsigned char)'a', &dictionary, all_codes, &code_write, &file);
 //	
-//	encode(&root, (unsigned char)'r', &dictionary, all_codes, &code_write, nyt_code, &file);
+//	encode(&root, (unsigned char)'r', &dictionary, all_codes, &code_write, &file);
 //	
-//	encode(&root, (unsigned char)'d', &dictionary, all_codes, &code_write, nyt_code, &file);
+//	encode(&root, (unsigned char)'d', &dictionary, all_codes, &code_write, &file);
 //	
-//	encode(&root, (unsigned char)'v', &dictionary, all_codes, &code_write, nyt_code, &file);
+//	encode(&root, (unsigned char)'v', &dictionary, all_codes, &code_write, &file);
 //	
-//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, nyt_code, &file);
+//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, &file);
 //	
-//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, nyt_code, &file);
+//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, &file);
 //	
-//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, nyt_code, &file);
+//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, &file);
 //	
-//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, nyt_code, &file);
+//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, &file);
 //	
-//	encode(&root, (unsigned char)0x00, &dictionary, all_codes, &code_write, nyt_code, &file);
+//	encode(&root, (unsigned char)0x00, &dictionary, all_codes, &code_write, &file);
 //	
-//	encode(&root, (unsigned char)0xff, &dictionary, all_codes, &code_write, nyt_code, &file);
+//	encode(&root, (unsigned char)0xff, &dictionary, all_codes, &code_write, &file);
 	
-//	for (int i=0; i<53; i++) {
-//		encode(&root, (unsigned char)i, &dictionary, all_codes, &code_write, nyt_code, &file);
+//	for (int i=0; i<256; i++) {
+//		encode(&root, (unsigned char)i%64, &dictionary, all_codes, &code_write, &file);
 //	}
 	
-	for (int i=0; i<512; i++) {
-		encode(&root, (unsigned char)i%26+'a', &dictionary, all_codes, &code_write, nyt_code, &file);
+	for (int i=0; i<768; i++) {
+		encode(&root, (unsigned char)i%26+'a', &dictionary, all_codes, &code_write, &file);
 	}
 	
 //	update(&root, (unsigned char)'a', &dictionary);
