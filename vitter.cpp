@@ -12,6 +12,7 @@
 #include <cstring>
 #include <fstream>
 #include <queue>
+#include <bitset>
 
 #define SYMBOL 256
 #define NUMBER 512
@@ -79,6 +80,7 @@ void merge_node(node **tree, node *left, node *right) {
 	temp->left->parent = temp;
 	temp->right->parent = temp;
 	temp->symbol = 0x00;
+	temp->parent = NULL;
 	*tree = temp;
 	
 	return;
@@ -406,12 +408,12 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 	std::vector<unsigned char>::iterator it;
 	it = std::search_n ((*dictionary).begin(), (*dictionary).end(), 1, symbol);
 	
-	char all_codes[SYMBOL] = "";
+	char all_codes[SYMBOL / 8] = "";
 	
 	// symbol exist
 	if (it != (*dictionary).end()) {
-		char do_code[SYMBOL] = "";
-		char code[SYMBOL] = "";
+		char do_code[1] = "";
+		char code[SYMBOL / 8] = "";
 		
 		get_the_code(&*tree, symbol, do_code, code);
 		
@@ -424,8 +426,8 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		}
 		
 	} else {
-		char do_code[SYMBOL] = "";
-		char nyt_code[SYMBOL] = "";
+		char do_code[1] = "";
+		char nyt_code[SYMBOL / 8] = "";
 		
 		if (*tree != NULL)
 			get_nyt_code(&*tree, do_code, nyt_code);
@@ -471,11 +473,140 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 	std::cout << all_codes;
 }
 
+/**
+ * DECODE
+ */
+
+bool read_from_file(std::ifstream *file, std::queue<char> *code_read) {
+	char temp;
+	
+	temp = temp & 0x00;
+	
+	char inner_temp;
+	
+	if ((*file).get(temp)) {
+		unsigned char inner_temp = (unsigned char) temp;
+		
+		for (int i=0; i<8; i++) {
+			if ((inner_temp & 0x80) == 0x80) {
+//				std::cout << '1';
+				(*code_read).push('1');
+			}
+			else {
+//				std::cout << '0';
+				(*code_read).push('0');
+			}
+			inner_temp = inner_temp << 1;
+		}
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+void get_char_from_code(std::queue<char> *code_read, unsigned char *character) {
+	unsigned char temp;
+	temp = temp & 0x00;
+	for (int i=0; i<8; i++) {
+		if ((*code_read).front() == '1') {
+			temp = temp ^ 0x01;
+		}
+		
+		if (i != 7) {
+			temp = temp << 1;
+		}
+		(*code_read).pop();
+	}
+	character[0] = temp;
+}
+
+void write_to_file_instansly(std::ofstream *file, unsigned char symbol) {
+	*file << symbol;
+}
+
+void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char> *code_read, std::ifstream *file, std::ofstream *out_file) {
+	
+	bool oke = true;
+	
+	// 4 byte
+	while ((*code_read).size() < 32 && oke) {
+		oke = read_from_file(&*file, &*code_read);
+	}
+	
+	node *temp = *tree;
+	
+	if (temp == NULL) {
+		unsigned char symbol[1];
+		get_char_from_code(&*code_read, symbol);
+		write_to_file_instansly(&*out_file, symbol[0]);
+		printf("%2x", symbol[0]);
+		
+		// call update procedure
+		update(&*tree, symbol[0], &*dictionary);
+		temp = *tree;
+		
+	} else {
+		while (temp->left != NULL && temp->right != NULL && (*code_read).size() > 0) {
+			if ((*code_read).front() == '0') {
+				temp = temp->left;
+				(*code_read).pop();
+				
+			} else {
+				temp = temp->right;
+				(*code_read).pop();
+				
+			}
+			
+			// 4 byte
+			while ((*code_read).size() < 32 && oke) {
+				oke = read_from_file(&*file, &*code_read);
+			}
+			
+		}
+		
+		if ((*code_read).size() == 0) {
+			return;
+		}
+		
+		if (temp->weight == 0) {
+			unsigned char symbol[1];
+			get_char_from_code(&*code_read, symbol);
+			write_to_file_instansly(&*out_file, symbol[0]);
+			
+			// call update procedure
+			update(&*tree, symbol[0], &*dictionary);
+			temp = *tree;
+			
+		} else {
+			write_to_file_instansly(&*out_file, temp->symbol);
+			
+			// call update procedure
+			update(&*tree, temp->symbol, &*dictionary);
+			temp = *tree;
+			
+		}
+		
+	}
+	
+}
+
+bool read_from_file_instansly(std::ifstream *file, unsigned char *symbol) {
+	char temp;
+	if ((*file).get(temp)) {
+		symbol[0] = temp;
+		
+		return true;
+	}
+	else {
+		return false;
+	}
+	
+}
+
 int main() {
 	node *root;
 	root = NULL;
-	node *nyt;
-	create_node(&nyt, 0x00, true);
 
 	std::vector<unsigned char> dictionary;
 	std::queue<char> code_write;
@@ -509,33 +640,25 @@ int main() {
 //	
 //	encode(&root, (unsigned char)0xff, &dictionary, &code_write, &file);
 	
-	for (int i=0; i<1024; i++) {
-		encode(&root, (unsigned char)i%128+64, &dictionary, &code_write, &file);
-	}
-	
-//	for (int i=0; i<768; i++) {
-//		encode(&root, (unsigned char)i%26+'a', &dictionary, &code_write, &file);
+//	for (int i=0; i<1024; i++) {
+//		encode(&root, (unsigned char)i%128+64, &dictionary, &code_write, &file);
 //	}
 	
-//	update(&root, (unsigned char)'a', &dictionary);
-//	
-//	update(&root, (unsigned char)'a', &dictionary);
-//
-//	update(&root, (unsigned char)'r', &dictionary);
-//	
-//	update(&root, (unsigned char)'d', &dictionary);
-//	
-//	update(&root, (unsigned char)'v', &dictionary);
-//
-//	update(&root, (unsigned char)'j', &dictionary);
-//
-//	update(&root, (unsigned char)'j', &dictionary);
-//
-//	update(&root, (unsigned char)'j', &dictionary);
-//
-//	update(&root, (unsigned char)'j', &dictionary);
-//	
-//	update(&root, (unsigned char)'a', &dictionary);
+//	for (int i=0; i<26*10; i++) {
+//		encode(&root, (unsigned char)(i%26+'a'), &dictionary, &code_write, &file);
+//	}
+	
+	std::ifstream file_in;
+	
+	file_in.open("awal.txt", std::ios::in | std::ios::binary);
+	
+	unsigned char symbol[1];
+	
+	while (read_from_file_instansly(&file_in, symbol)) {
+		encode(&root, symbol[0], &dictionary, &code_write, &file);
+	}
+	
+	file_in.close();
 	
 	std::cout << '\n' << '\n';
 	
@@ -564,6 +687,24 @@ int main() {
 			
 		write_to_file(&file, code_to_write);
 	}
+	
+	file.close();
+	
+	file.open("restore.txt", std::ios::out | std::ios::binary);
+	
+	file_in.open("temp.ah", std::ios::in | std::ios::binary);
+	
+	dictionary.clear();
+	
+	root = NULL;
+	
+	std::queue<char> code_read;
+	
+	do {
+		decode(&root, &dictionary, &code_read, &file_in, &file);
+	} while (code_read.size() > 0);
+	
+	file_in.close();
 	
 	file.close();
 

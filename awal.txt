@@ -1,0 +1,9 @@
+Lossy Graphics Compression
+.Enter Compression
+-> Statistical and Dictionary Compression Methods
+-> Lossy Compression
+-> Differential Modulation
+-> Adaptive Coding
+.A Standard That Works: JPEG
+-> JPEG Compresssion
+-> The Discrete Cosine Trasform
