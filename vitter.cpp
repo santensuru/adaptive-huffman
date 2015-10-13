@@ -401,10 +401,12 @@ void write_to_file(std::ofstream *file, char *byte) {
 	*file << temp;
 }
 
-void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, char *all_codes, std::queue<char> *code_write, std::ofstream *file) {
+void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, std::queue<char> *code_write, std::ofstream *file) {
 	// search in dictionary
 	std::vector<unsigned char>::iterator it;
 	it = std::search_n ((*dictionary).begin(), (*dictionary).end(), 1, symbol);
+	
+	char all_codes[SYMBOL] = "";
 	
 	// symbol exist
 	if (it != (*dictionary).end()) {
@@ -457,7 +459,7 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 	update(&*tree, symbol, &*dictionary);
 	
 	// write to file
-	while ((*code_write).size() > 8) {
+	while ((*code_write).size() >= 8) {
 		char code_to_write[8];
 		for (int i=0; i<8; i++) {
 			code_to_write[i] = (*code_write).front();
@@ -465,6 +467,8 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		}
 		write_to_file(&*file, code_to_write);
 	}
+	
+	std::cout << all_codes;
 }
 
 int main() {
@@ -475,46 +479,43 @@ int main() {
 
 	std::vector<unsigned char> dictionary;
 	std::queue<char> code_write;
-	char all_codes[NUMBER * 16];
-	
-	memset(all_codes, 0, NUMBER * 4);
-	
-	strncpy(all_codes, "", 1);
-	
-//	std::cout << strlen(nyt_code);
 	
 	std::ofstream file;
 	file.open("temp.ah", std::ios::out | std::ios::binary);
 	
-//	encode(&root, (unsigned char)'a', &dictionary, all_codes, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'a', &dictionary, all_codes, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'r', &dictionary, all_codes, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'d', &dictionary, all_codes, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'v', &dictionary, all_codes, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)'j', &dictionary, all_codes, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)0x00, &dictionary, all_codes, &code_write, &file);
-//	
-//	encode(&root, (unsigned char)0xff, &dictionary, all_codes, &code_write, &file);
+	std::cout << "m = 2^e + r, m = 256 -> e = 8, r = 0" << '\n' << '\n';
 	
-//	for (int i=0; i<256; i++) {
-//		encode(&root, (unsigned char)i%64, &dictionary, all_codes, &code_write, &file);
-//	}
+	std::cout << "string representation" << '\n' << '\n';
 	
-	for (int i=0; i<768; i++) {
-		encode(&root, (unsigned char)i%26+'a', &dictionary, all_codes, &code_write, &file);
+//	encode(&root, (unsigned char)'a', &dictionary, &code_write, &file);
+//	
+//	encode(&root, (unsigned char)'a', &dictionary, &code_write, &file);
+//	
+//	encode(&root, (unsigned char)'r', &dictionary, &code_write, &file);
+//	
+//	encode(&root, (unsigned char)'d', &dictionary, &code_write, &file);
+//	
+//	encode(&root, (unsigned char)'v', &dictionary, &code_write, &file);
+//	
+//	encode(&root, (unsigned char)'j', &dictionary, &code_write, &file);
+//	
+//	encode(&root, (unsigned char)'j', &dictionary, &code_write, &file);
+//	
+//	encode(&root, (unsigned char)'j', &dictionary, &code_write, &file);
+//	
+//	encode(&root, (unsigned char)'j', &dictionary, &code_write, &file);
+//	
+//	encode(&root, (unsigned char)0x00, &dictionary, &code_write, &file);
+//	
+//	encode(&root, (unsigned char)0xff, &dictionary, &code_write, &file);
+	
+	for (int i=0; i<1024; i++) {
+		encode(&root, (unsigned char)i%128+64, &dictionary, &code_write, &file);
 	}
+	
+//	for (int i=0; i<768; i++) {
+//		encode(&root, (unsigned char)i%26+'a', &dictionary, &code_write, &file);
+//	}
 	
 //	update(&root, (unsigned char)'a', &dictionary);
 //	
@@ -536,14 +537,11 @@ int main() {
 //	
 //	update(&root, (unsigned char)'a', &dictionary);
 	
-	std::cout << "m = 2^e + r, m = 256 -> e = 8, r = 0" << '\n' << '\n';
+	std::cout << '\n' << '\n';
 	
-	std::cout << "huffman tree" << '\n' << '\n'; 
-	print_tree(&root, 0);
-	std::cout << '\n';
-	
-	std::cout << "string representation" << '\n' << '\n'; 
-	std::cout << all_codes << '\n' << '\n';
+//	std::cout << "huffman tree" << '\n' << '\n'; 
+//	print_tree(&root, 0);
+//	std::cout << '\n';
 	
 	int offset = code_write.size();
 	std::cout << "sisa " << offset << " bit" << '\n';
