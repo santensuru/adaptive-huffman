@@ -12,7 +12,7 @@
 #include <cstring>
 #include <fstream>
 #include <queue>
-#include <bitset>
+#include <ctime>
 
 #define SYMBOL 256
 #define NUMBER 512
@@ -82,6 +82,36 @@ void merge_node(node **tree, node *left, node *right) {
 	temp->symbol = 0x00;
 	temp->parent = NULL;
 	*tree = temp;
+	
+	return;
+}
+
+void delete_tree(node **tree) {
+	if ((*tree)->left != NULL) {
+		delete_tree(&(*tree)->left);
+	}
+	
+	if ((*tree)->right != NULL) {
+		delete_tree(&(*tree)->right);
+	}
+	
+	if ((*tree) != NULL) {
+		if ((*tree)->parent != NULL && (*tree)->left == NULL) {
+			(*tree)->parent->left = NULL;
+			free(*tree);
+		}
+		
+		else if ((*tree)->parent != NULL && (*tree)->right == NULL) {
+			(*tree)->parent->right = NULL;
+			free(*tree);
+		}
+		
+		else if ((*tree)->right == NULL && (*tree)->left == NULL){
+			free(*tree);
+			(*tree) = NULL;
+		}
+		
+	}
 	
 	return;
 }
@@ -635,6 +665,7 @@ void compress(std::ifstream *in, std::ofstream *out) {
 	}
 	
 	dictionary.clear();
+	delete_tree(&root);
 	
 	return;
 }
@@ -654,6 +685,7 @@ void decompress(std::ifstream *in, std::ofstream *out) {
 	} while (code_read.size() > 0);
 	
 	dictionary.clear();
+	delete_tree(&root);
 	
 	return;
 }
@@ -664,6 +696,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     else {
+    	time_t start, end;
+    	time(&start);
+    	
     	std::ifstream in;
 		in.open(argv[2], std::ios::in | std::ios::binary);
 		
@@ -689,6 +724,10 @@ int main(int argc, char* argv[]) {
     		printf("Usage: %s -c | -d filename\n",argv[0]);
         	return 1;
 		}
+		
+		time(&end);
+		
+		std::cout << "\nExecution time: +/- " << difftime(end, start) << "s\n";
 	}
 	
 	return 0;
