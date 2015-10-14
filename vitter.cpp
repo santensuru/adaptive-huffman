@@ -52,28 +52,6 @@ void create_node(node **leaf, unsigned char symbol, bool is_nyt) {
 	return;
 }
 
-void insert_node(node **root, node *leaf) {
-	if (*root == NULL) {
-		*root = leaf;
-		return;
-	
-	} else {
-		if ((*root)->weight == 0) {
-			leaf->parent = (*root)->parent;
-			(*root)->parent->left = leaf;
-			return;
-		}
-		
-		if ((*root)->left != NULL) {
-			insert_node(&(*root)->left, leaf);
-		}
-		
-		if ((*root)->right != NULL) {
-			insert_node(&(*root)->right, leaf);
-		}
-	}
-}
-
 void merge_node(node **tree, node *left, node *right) {
 	node *temp = (node*) malloc(sizeof(node));
 	temp->weight = left->weight + right->weight;
@@ -243,7 +221,7 @@ bool my_sort(my_pair p, my_pair q) {
 	return p.first < q.first;
 }
 
-void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary) {
+void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, node **nyt) {
 	// search in dictionary
 	std::vector<unsigned char>::iterator it;
 	it = std::search_n ((*dictionary).begin(), (*dictionary).end(), 1, symbol);
@@ -278,7 +256,14 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		node *old_nyt = NULL;
 		merge_node(&old_nyt, new_nyt, new_node);
 		
-		insert_node(&*tree, old_nyt);
+		if (*tree == NULL) {
+			*tree = old_nyt;
+			*nyt = (*tree)->left;
+		} else {
+			old_nyt->parent = (*nyt)->parent;
+			(*nyt)->parent->left = old_nyt;
+			*nyt = old_nyt->left;
+		}
 		
 		// goto old nyt
 		temp = old_nyt;
@@ -328,7 +313,6 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		
 		std::vector<my_pair> queue;
 		queueing_node(&*tree, &queue, 0);
-		
 		std::sort(queue.begin(), queue.end(), my_sort);
 		
 		int num = NUMBER;
@@ -419,7 +403,7 @@ void write_to_file(std::ofstream *file, char *byte) {
 	return;
 }
 
-void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, std::queue<char> *code_write, std::ofstream *file) {
+void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, std::queue<char> *code_write, std::ofstream *file, node **nyt) {
 	// search in dictionary
 	std::vector<unsigned char>::iterator it;
 	it = std::search_n ((*dictionary).begin(), (*dictionary).end(), 1, symbol);
@@ -458,7 +442,7 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 	}
 	
 	// call update procedure
-	update(&*tree, symbol, &*dictionary);
+	update(&*tree, symbol, &*dictionary, &*nyt);
 	
 	// write to file
 	while ((*code_write).size() >= 8) {
@@ -527,7 +511,7 @@ void write_to_file_instansly(std::ofstream *file, unsigned char symbol) {
 	return;
 }
 
-void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char> *code_read, std::ifstream *file, std::ofstream *out_file) {
+void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char> *code_read, std::ifstream *file, std::ofstream *out_file, node **nyt) {
 	
 	bool oke = true;
 	
@@ -544,7 +528,7 @@ void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char
 		write_to_file_instansly(&*out_file, symbol[0]);
 		
 		// call update procedure
-		update(&*tree, symbol[0], &*dictionary);
+		update(&*tree, symbol[0], &*dictionary, &*nyt);
 		temp = *tree;
 		
 	} else {
@@ -576,14 +560,14 @@ void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char
 			write_to_file_instansly(&*out_file, symbol[0]);
 			
 			// call update procedure
-			update(&*tree, symbol[0], &*dictionary);
+			update(&*tree, symbol[0], &*dictionary, &*nyt);
 			temp = *tree;
 			
 		} else {
 			write_to_file_instansly(&*out_file, temp->symbol);
 			
 			// call update procedure
-			update(&*tree, temp->symbol, &*dictionary);
+			update(&*tree, temp->symbol, &*dictionary, &*nyt);
 			temp = *tree;
 			
 		}
@@ -611,13 +595,14 @@ bool read_from_file_instansly(std::ifstream *file, unsigned char *symbol) {
 
 void compress(std::ifstream *in, std::ofstream *out) {
 	node *root = NULL;
+	node *nyt = NULL;
 	
 	std::vector<unsigned char> dictionary;
 	std::queue<char> code_write;
 	unsigned char symbol[1];
 	
 	while (read_from_file_instansly(&*in, symbol)) {
-		encode(&root, symbol[0], &dictionary, &code_write, &*out);
+		encode(&root, symbol[0], &dictionary, &code_write, &*out, &nyt);
 	}
 	
 	// write to file for offset
@@ -647,12 +632,13 @@ void compress(std::ifstream *in, std::ofstream *out) {
 
 void decompress(std::ifstream *in, std::ofstream *out) {
 	node *root = NULL;
+	node *nyt = NULL;
 	
 	std::vector<unsigned char> dictionary;
 	std::queue<char> code_read;
 	
 	do {
-		decode(&root, &dictionary, &code_read, &*in, &*out);
+		decode(&root, &dictionary, &code_read, &*in, &*out, &nyt);
 	} while (code_read.size() > 0);
 	
 	dictionary.clear();
