@@ -408,7 +408,7 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 	std::vector<unsigned char>::iterator it;
 	it = std::search_n ((*dictionary).begin(), (*dictionary).end(), 1, symbol);
 	
-	char all_codes[SYMBOL / 8] = "";
+//	char all_codes[SYMBOL / 8] = "";
 	
 	// symbol exist
 	if (it != (*dictionary).end()) {
@@ -417,9 +417,9 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		
 		get_the_code(&*tree, symbol, do_code, code);
 		
-		strcat(all_codes, "(");
-		strcat(all_codes, code);
-		strcat(all_codes, ")");
+//		strcat(all_codes, "(");
+//		strcat(all_codes, code);
+//		strcat(all_codes, ")");
 		
 		for (int i=0; i<strlen(code); i++) {
 			(*code_write).push(code[i]);
@@ -438,14 +438,14 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		
 		get_standard_code(symbol, code);
 		
-		strcat(all_codes, "(");
-		if(strlen(nyt_code) > 0) {
-			strcat(all_codes, nyt_code);
-			strcat(all_codes, "-");
-		}
-		
-		strcat(all_codes, code);
-		strcat(all_codes, ")");
+//		strcat(all_codes, "(");
+//		if(strlen(nyt_code) > 0) {
+//			strcat(all_codes, nyt_code);
+//			strcat(all_codes, "-");
+//		}
+//		
+//		strcat(all_codes, code);
+//		strcat(all_codes, ")");
 		
 		for (int i=0; i<strlen(nyt_code); i++) {
 			(*code_write).push(nyt_code[i]);
@@ -470,7 +470,7 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		write_to_file(&*file, code_to_write);
 	}
 	
-	std::cout << all_codes;
+//	std::cout << all_codes;
 }
 
 /**
@@ -604,6 +604,99 @@ bool read_from_file_instansly(std::ifstream *file, unsigned char *symbol) {
 	
 }
 
+/**
+ * COMPRESS
+ */
+
+void compress(std::ifstream *in, std::ofstream *out) {
+	node *root = NULL;
+	
+	std::vector<unsigned char> dictionary;
+	std::queue<char> code_write;
+	unsigned char symbol[1];
+	
+	while (read_from_file_instansly(&*in, symbol)) {
+		encode(&root, symbol[0], &dictionary, &code_write, &*out);
+	}
+	
+	// write to file for offset
+	if (code_write.size() > 0) {
+		while (code_write.size() < 8) {
+			code_write.push('0');
+		}
+		
+		char code_to_write[8];
+		for (int i=0; i<8; i++) {
+			code_to_write[i] = code_write.front();
+			code_write.pop();
+		}
+			
+		write_to_file(&*out, code_to_write);
+	}
+	
+	dictionary.clear();
+	
+	return;
+}
+
+/**
+ * DECOMPRESS
+ */
+
+void decompress(std::ifstream *in, std::ofstream *out) {
+	node *root = NULL;
+	
+	std::vector<unsigned char> dictionary;
+	std::queue<char> code_read;
+	
+	do {
+		decode(&root, &dictionary, &code_read, &*in, &*out);
+	} while (code_read.size() > 0);
+	
+	dictionary.clear();
+	
+	return;
+}
+
+int main(int argc, char* argv[]) {	
+	if (argc != 3) {
+        printf("Usage: %s -c | -d filename\n",argv[0]);
+        return 1;
+    }
+    else {
+    	std::ifstream in;
+		in.open(argv[2], std::ios::in | std::ios::binary);
+		
+		std::ofstream out;
+		char filename_out[128];
+		sscanf(argv[2], "%[^.]", filename_out);
+    	
+    	if (strcmp(argv[1], "-c") == 0) {
+    		strcat(filename_out, ".ah");
+			out.open(filename_out, std::ios::out | std::ios::binary);
+    		
+    		compress(&in, &out);
+    		
+		} else if (strcmp(argv[1], "-d") == 0) {
+    		strcat(filename_out, ".restore");
+			out.open(filename_out, std::ios::out | std::ios::binary);
+    		
+    		decompress(&in, &out);
+    		
+		}
+    	
+    	else {
+    		printf("Usage: %s -c | -d filename\n",argv[0]);
+        	return 1;
+		}
+	}
+	
+	return 0;
+}
+
+/**
+ * OLD
+ *
 int main() {
 	// ENCODE
 	
@@ -684,3 +777,6 @@ int main() {
 
 	return 0;
 }
+ *
+ */
+
