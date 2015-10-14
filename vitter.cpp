@@ -4,6 +4,8 @@
  * Author: Djuned Fernando Djusdek
  *         5112.100.071
  *         Informatics - ITS
+ * 
+ * Version 1.0
  */
 
 #include <iostream>
@@ -211,6 +213,7 @@ void find_external_symbol(node **tree, unsigned char symbol, node **position) {
 	return;
 }
 
+// Not use, just for check the binary tree
 void print_tree(node **tree, int deep) {
 	if((*tree)->left != NULL)
 		print_tree(&(*tree)->left, deep+1);
@@ -247,7 +250,6 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 	
 	node *temp;
 	
-	// NYT
 	if (it != (*dictionary).end()) {
 		find_external_symbol(&*tree, symbol, &temp);
 		
@@ -265,7 +267,8 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		if (inner_temp != NULL) {
 			switch_node(temp->parent, l_r, inner_temp, l_r_sibling);
 		}
-				
+			
+	// NYT
 	} else {
 		node *new_nyt;
 		create_node(&new_nyt, 0x00, true);
@@ -288,7 +291,6 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		int num = NUMBER;
 		for (int i=0; i<queue.size(); i++) {
 			queue.at(i).second->number = num--;
-//			std::cout << queue.at(i).second->symbol << " " << queue.at(i).second->number << '\n';
 		}
 		
 		(*dictionary).push_back(symbol);
@@ -297,10 +299,6 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 	
 	// increment weight
 	increment_weight(&temp);
-	
-	// for checking tree
-//	print_tree(&*tree, 0);
-//	std::cout << '\n';
 	
 	while(temp->parent != NULL) {
 		// go to parent node
@@ -337,10 +335,6 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		for (int i=0; i<queue.size(); i++) {
 			queue.at(i).second->number = num--;
 		}
-		
-		// for checkint tree
-//		print_tree(&*tree, 0);
-//		std::cout << '\n';
 	}
 	
 	*tree = temp;
@@ -394,16 +388,6 @@ void get_nyt_code(node **tree, char *do_code, char *code) {
 
 void get_standard_code(unsigned char symbol, char *code) {
 	unsigned char temp;
-//	for (int i=7; i>=0; i--) {
-//		temp = symbol & 0x01;
-//		if (temp == 0x01) {
-//			code[i+1] = '1';
-//		} else {
-//			code[i+1] = '0';
-//		}
-//		symbol = symbol >> 1;
-//	}
-//	code[0] = '0';
 	
 	for (int i=7; i>=0; i--) {
 		temp = symbol & 0x01;
@@ -431,6 +415,8 @@ void write_to_file(std::ofstream *file, char *byte) {
 		}
 	}
 	*file << temp;
+	
+	return;
 }
 
 void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, std::queue<char> *code_write, std::ofstream *file) {
@@ -438,18 +424,12 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 	std::vector<unsigned char>::iterator it;
 	it = std::search_n ((*dictionary).begin(), (*dictionary).end(), 1, symbol);
 	
-//	char all_codes[SYMBOL / 8] = "";
-	
 	// symbol exist
 	if (it != (*dictionary).end()) {
 		char do_code[1] = "";
 		char code[SYMBOL / 8] = "";
 		
 		get_the_code(&*tree, symbol, do_code, code);
-		
-//		strcat(all_codes, "(");
-//		strcat(all_codes, code);
-//		strcat(all_codes, ")");
 		
 		for (int i=0; i<strlen(code); i++) {
 			(*code_write).push(code[i]);
@@ -463,19 +443,9 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 			get_nyt_code(&*tree, do_code, nyt_code);
 		
 		char code[10];
-//		code[9] = '\0';
 		code[8] = '\0';
 		
 		get_standard_code(symbol, code);
-		
-//		strcat(all_codes, "(");
-//		if(strlen(nyt_code) > 0) {
-//			strcat(all_codes, nyt_code);
-//			strcat(all_codes, "-");
-//		}
-//		
-//		strcat(all_codes, code);
-//		strcat(all_codes, ")");
 		
 		for (int i=0; i<strlen(nyt_code); i++) {
 			(*code_write).push(nyt_code[i]);
@@ -500,7 +470,7 @@ void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		write_to_file(&*file, code_to_write);
 	}
 	
-//	std::cout << all_codes;
+	return;
 }
 
 /**
@@ -519,11 +489,9 @@ bool read_from_file(std::ifstream *file, std::queue<char> *code_read) {
 		
 		for (int i=0; i<8; i++) {
 			if ((inner_temp & 0x80) == 0x80) {
-//				std::cout << '1';
 				(*code_read).push('1');
 			}
 			else {
-//				std::cout << '0';
 				(*code_read).push('0');
 			}
 			inner_temp = inner_temp << 1;
@@ -549,10 +517,14 @@ void get_char_from_code(std::queue<char> *code_read, unsigned char *character) {
 		(*code_read).pop();
 	}
 	character[0] = temp;
+	
+	return;
 }
 
 void write_to_file_instansly(std::ofstream *file, unsigned char symbol) {
 	*file << symbol;
+	
+	return;
 }
 
 void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char> *code_read, std::ifstream *file, std::ofstream *out_file) {
@@ -570,7 +542,6 @@ void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char
 		unsigned char symbol[1];
 		get_char_from_code(&*code_read, symbol);
 		write_to_file_instansly(&*out_file, symbol[0]);
-//		printf("%2x", symbol[0]);
 		
 		// call update procedure
 		update(&*tree, symbol[0], &*dictionary);
@@ -616,9 +587,9 @@ void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char
 			temp = *tree;
 			
 		}
-		
 	}
 	
+	return;
 }
 
 bool read_from_file_instansly(std::ifstream *file, unsigned char *symbol) {
@@ -732,90 +703,4 @@ int main(int argc, char* argv[]) {
 	
 	return 0;
 }
-
-/**
- * OLD
- *
-int main() {
-	// ENCODE
-	
-	node *root;
-	root = NULL;
-
-	std::vector<unsigned char> dictionary;
-	std::queue<char> code_write;
-	
-	std::ofstream file;
-	file.open("temp.ah", std::ios::out | std::ios::binary);
-	
-	std::cout << "m = 2^e + r, m = 256 -> e = 8, r = 0" << '\n' << '\n';
-	
-	std::cout << "string representation" << '\n' << '\n';
-	
-	std::ifstream file_in;
-	
-	file_in.open("awal.txt", std::ios::in | std::ios::binary);
-	
-	unsigned char symbol[1];
-	
-	while (read_from_file_instansly(&file_in, symbol)) {
-		encode(&root, symbol[0], &dictionary, &code_write, &file);
-	}
-	
-	file_in.close();
-	
-	std::cout << '\n' << '\n';
-	
-//	std::cout << "huffman tree" << '\n' << '\n'; 
-//	print_tree(&root, 0);
-//	std::cout << '\n';
-	
-	int offset = code_write.size();
-	std::cout << "sisa " << offset << " bit" << '\n';
-	
-	// write to file for offset
-	if (code_write.size() > 0) {
-		while (code_write.size() < 8) {
-			code_write.push('0');
-		}
-		
-		char code_to_write[8];
-		for (int i=0; i<8; i++) {
-			if (i == offset)
-				std::cout << "-";
-			std::cout << code_write.front();
-			code_to_write[i] = code_write.front();
-			code_write.pop();
-			
-		}
-			
-		write_to_file(&file, code_to_write);
-	}
-	
-	file.close();
-	
-	// DECODE
-	
-	file.open("restore.txt", std::ios::out | std::ios::binary);
-	
-	file_in.open("temp.ah", std::ios::in | std::ios::binary);
-	
-	dictionary.clear();
-	
-	root = NULL;
-	
-	std::queue<char> code_read;
-	
-	do {
-		decode(&root, &dictionary, &code_read, &file_in, &file);
-	} while (code_read.size() > 0);
-	
-	file_in.close();
-	
-	file.close();
-
-	return 0;
-}
- *
- */
 
