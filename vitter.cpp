@@ -39,9 +39,11 @@ void create_node(node **leaf, unsigned char symbol, bool is_nyt) {
 	if (is_nyt) {
 		temp->symbol = 0x00;
 		temp->weight = 0;
+		
 	} else {
 		temp->symbol = symbol;
-		temp->weight = 1;	
+		temp->weight = 1;
+		
 	}
 	temp->parent = NULL;
 	temp->left = NULL;
@@ -79,16 +81,15 @@ void delete_tree(node **tree) {
 		if ((*tree)->parent != NULL && (*tree)->left == NULL) {
 			(*tree)->parent->left = NULL;
 			free(*tree);
-		}
-		
-		else if ((*tree)->parent != NULL && (*tree)->right == NULL) {
+			
+		} else if ((*tree)->parent != NULL && (*tree)->right == NULL) {
 			(*tree)->parent->right = NULL;
 			free(*tree);
-		}
-		
-		else if ((*tree)->right == NULL && (*tree)->left == NULL){
+			
+		} else if ((*tree)->right == NULL && (*tree)->left == NULL){
 			free(*tree);
 			(*tree) = NULL;
+			
 		}
 		
 	}
@@ -101,23 +102,25 @@ void search_higher_block(node **tree, int weight, int *number, int parent_number
 		*position = (*tree)->parent;
 		*number = (*tree)->number;
 		if ((*tree)->parent->left->number == (*tree)->number) {
-			strcpy(l_r, "left");
+			strcpy(l_r, "l");
 		} else {
-			strcpy(l_r, "right");
+			strcpy(l_r, "r");
 		}
 	}
 	
-	if ((*tree)->left != NULL)
+	if ((*tree)->left != NULL) {
 		search_higher_block(&(*tree)->left, weight, &*number, parent_number, &*position, l_r);
+	}
 	
-	if ((*tree)->right != NULL)
+	if ((*tree)->right != NULL) {
 		search_higher_block(&(*tree)->right, weight, &*number, parent_number, &*position, l_r);
+	}
 		
 	return;
 }
 
 void switch_node(node *tree, char *l_r, node *sibling, char *l_r_sibling) {	
-	if (strcmp(l_r, "left") == 0 && strcmp(l_r_sibling, "left") == 0) {
+	if (strcmp(l_r, "l") == 0 && strcmp(l_r_sibling, "l") == 0) {
 		node *temp = tree->left;
 		tree->left = sibling->left;
 		sibling->left = temp;
@@ -125,7 +128,7 @@ void switch_node(node *tree, char *l_r, node *sibling, char *l_r_sibling) {
 		tree->left->parent = tree;
 		sibling->left->parent = sibling;
 		
-	} else if (strcmp(l_r, "left") == 0) {
+	} else if (strcmp(l_r, "l") == 0) {
 		node *temp = tree->left;
 		tree->left = sibling->right;
 		sibling->right = temp;
@@ -133,7 +136,7 @@ void switch_node(node *tree, char *l_r, node *sibling, char *l_r_sibling) {
 		tree->left->parent = tree;
 		sibling->right->parent = sibling;
 		
-	} else if (strcmp(l_r_sibling, "left") == 0) {
+	} else if (strcmp(l_r_sibling, "l") == 0) {
 		node *temp = tree->right;
 		tree->right = sibling->left;
 		sibling->left = temp;
@@ -169,48 +172,58 @@ void queueing_node(node **tree, std::vector<my_pair> *queue, int deep) {
 }
 
 void increment_weight(node **tree) {
-	if ((*tree)->left != NULL && (*tree)->right != NULL)
+	if ((*tree)->left != NULL && (*tree)->right != NULL) {
 		(*tree)->weight = (*tree)->left->weight + (*tree)->right->weight;
-	else
+		
+	} else {
 		(*tree)->weight++;
+	}
 	
 	return;
 }
 
 void find_external_symbol(node **tree, unsigned char symbol, node **position) {
-	if ((*tree)->left != NULL)
+	if ((*tree)->left != NULL) {
 		find_external_symbol(&(*tree)->left, symbol, &*position);
-		
+	}
+	
 	if ((*tree)->symbol == symbol) {
 		*position = *tree;
 	}
 	
-	if ((*tree)->right != NULL)
+	if ((*tree)->right != NULL) {
 		find_external_symbol(&(*tree)->right, symbol, &*position);
-		
+	}
+	
 	return;
 }
 
 // Not use, just for check the binary tree
 void print_tree(node **tree, int deep) {
-	if((*tree)->left != NULL)
+	if((*tree)->left != NULL) {
 		print_tree(&(*tree)->left, deep+1);
+	}
 	
-	if((*tree)->right != NULL)
+	if((*tree)->right != NULL) {
 		print_tree(&(*tree)->right, deep+1);
+	}
 	
 	char symbol_re[3];
 	sprintf(symbol_re, "%2x", (*tree)->symbol);
 	
-	if (symbol_re[0] == ' ')
+	if (symbol_re[0] == ' ') {
 		symbol_re[0] = '0';
+	}
 	
 	printf("%d 0x%s %c %d %3d", deep, symbol_re, (*tree)->symbol, (*tree)->number, (*tree)->weight);
 	
-	if ((*tree)->weight == 0)
+	if ((*tree)->weight == 0) {
 		std::cout << " << NYT";
-	else if ((*tree)->left == NULL)
+		
+	} else if ((*tree)->left == NULL) {
 		printf(" << 0x%s", symbol_re);
+		
+	}
 	
 	std::cout << '\n';
 	
@@ -232,14 +245,16 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		find_external_symbol(&*tree, symbol, &temp);
 		
 		node *inner_temp = NULL;
-		char l_r[10];
+		char l_r[2];
 		if (temp->parent->left->number == temp->number) {
-			strcpy(l_r, "left");
+			strcpy(l_r, "l");
+			
 		} else {
-			strcpy(l_r, "right");
+			strcpy(l_r, "r");
+			
 		}
 		
-		char l_r_sibling[10];
+		char l_r_sibling[2];
 		int number = temp->number;
 		search_higher_block(&*tree, temp->weight, &number, temp->parent->number, &inner_temp, l_r_sibling);
 		if (inner_temp != NULL) {
@@ -259,10 +274,12 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		if (*tree == NULL) {
 			*tree = old_nyt;
 			*nyt = (*tree)->left;
+			
 		} else {
 			old_nyt->parent = (*nyt)->parent;
 			(*nyt)->parent->left = old_nyt;
 			*nyt = old_nyt->left;
+			
 		}
 		
 		// goto old nyt
@@ -277,6 +294,8 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		for (int i=0; i<queue.size(); i++) {
 			queue.at(i).second->number = num--;
 		}
+		
+		queue.clear();
 		
 		(*dictionary).push_back(symbol);
 
@@ -294,14 +313,16 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		{
 			node *inner_temp = NULL;
 			
-			char l_r[10];
+			char l_r[2];
 			if (temp->parent->left->number == temp->number) {
-				strcpy(l_r, "left");
+				strcpy(l_r, "l");
+				
 			} else {
-				strcpy(l_r, "right");
+				strcpy(l_r, "r");
+				
 			}
 			
-			char l_r_sibling[10];
+			char l_r_sibling[2];
 			int number = temp->number;
 			search_higher_block(&*tree, temp->weight, &number, temp->parent->number, &inner_temp, l_r_sibling);
 			if (inner_temp != NULL) {
@@ -319,6 +340,8 @@ void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dicti
 		for (int i=0; i<queue.size(); i++) {
 			queue.at(i).second->number = num--;
 		}
+		
+		queue.clear();
 	}
 	
 	*tree = temp;
@@ -334,6 +357,7 @@ void get_the_code(node **tree, unsigned char symbol, char *do_code, char *code) 
 	char temp[SYMBOL];
 	if ((*tree)->symbol == symbol && (*tree)->left == NULL && (*tree)->right == NULL) {
 		strcpy(code, do_code);
+		
 		return;
 	}
 	
@@ -354,6 +378,7 @@ void get_nyt_code(node **tree, char *do_code, char *code) {
 	char temp[SYMBOL];
 	if ((*tree)->weight == 0 && (*tree)->left == NULL && (*tree)->right == NULL) {
 		strcpy(code, do_code);
+		
 		return;
 	}
 	
@@ -371,14 +396,13 @@ void get_nyt_code(node **tree, char *do_code, char *code) {
 }
 
 void get_standard_code(unsigned char symbol, char *code) {
-	unsigned char temp;
-	
 	for (int i=7; i>=0; i--) {
-		temp = symbol & 0x01;
-		if (temp == 0x01) {
+		if ((symbol & 0x01) == 0x01) {
 			code[i] = '1';
+			
 		} else {
 			code[i] = '0';
+			
 		}
 		symbol = symbol >> 1;
 	}
@@ -469,21 +493,22 @@ bool read_from_file(std::ifstream *file, std::queue<char> *code_read) {
 	char inner_temp;
 	
 	if ((*file).get(temp)) {
-		unsigned char inner_temp = (unsigned char) temp;
-		
 		for (int i=0; i<8; i++) {
-			if ((inner_temp & 0x80) == 0x80) {
+			if ((temp & 0x80) == 0x80) {
 				(*code_read).push('1');
 			}
 			else {
 				(*code_read).push('0');
 			}
-			inner_temp = inner_temp << 1;
+			temp = temp << 1;
 		}
+		
 		return true;
+		
 	}
 	else {
 		return false;
+		
 	}
 }
 
@@ -511,13 +536,10 @@ void write_to_file_instansly(std::ofstream *file, unsigned char symbol) {
 	return;
 }
 
-void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char> *code_read, std::ifstream *file, std::ofstream *out_file, node **nyt) {
-	
-	bool oke = true;
-	
+void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char> *code_read, std::ifstream *file, std::ofstream *out_file, node **nyt, bool *oke) {
 	// 4 byte
-	while ((*code_read).size() < 32 && oke) {
-		oke = read_from_file(&*file, &*code_read);
+	while ((*code_read).size() < 32 && *oke) {
+		*oke = read_from_file(&*file, &*code_read);
 	}
 	
 	node *temp = *tree;
@@ -544,8 +566,8 @@ void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char
 			}
 			
 			// 4 byte
-			while ((*code_read).size() < 32 && oke) {
-				oke = read_from_file(&*file, &*code_read);
+			while ((*code_read).size() < 32 && *oke) {
+				*oke = read_from_file(&*file, &*code_read);
 			}
 			
 		}
@@ -582,11 +604,12 @@ bool read_from_file_instansly(std::ifstream *file, unsigned char *symbol) {
 		symbol[0] = temp;
 		
 		return true;
+		
 	}
 	else {
 		return false;
+		
 	}
-	
 }
 
 /**
@@ -637,8 +660,10 @@ void decompress(std::ifstream *in, std::ofstream *out) {
 	std::vector<unsigned char> dictionary;
 	std::queue<char> code_read;
 	
+	bool oke = true;
+	
 	do {
-		decode(&root, &dictionary, &code_read, &*in, &*out, &nyt);
+		decode(&root, &dictionary, &code_read, &*in, &*out, &nyt, &oke);
 	} while (code_read.size() > 0);
 	
 	dictionary.clear();
@@ -650,7 +675,9 @@ void decompress(std::ifstream *in, std::ofstream *out) {
 int main(int argc, char* argv[]) {	
 	if (argc != 3) {
         printf("Usage: %s -c | -d filename\n",argv[0]);
+        
         return 1;
+        
     }
     else {
     	time_t start, end;
@@ -660,7 +687,7 @@ int main(int argc, char* argv[]) {
 		in.open(argv[2], std::ios::in | std::ios::binary);
 		
 		std::ofstream out;
-		char filename_out[128];
+		char filename_out[strlen(argv[2]) + 9];
 		sscanf(argv[2], "%[^.]", filename_out);
     	
     	if (strcmp(argv[1], "-c") == 0) {
@@ -679,7 +706,9 @@ int main(int argc, char* argv[]) {
     	
     	else {
     		printf("Usage: %s -c | -d filename\n",argv[0]);
+    		
         	return 1;
+        	
 		}
 		
 		time(&end);
