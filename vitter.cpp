@@ -243,6 +243,8 @@ namespace vitter {
 		
 		node *temp;
 		
+		std::vector<my_pair> queue;
+		
 		if (it != (*dictionary).end()) {
 			find_external_symbol(&*tree, symbol, &temp);
 			
@@ -288,7 +290,6 @@ namespace vitter {
 			temp = old_nyt;
 			
 			// give number
-			std::vector<my_pair> queue;
 			queueing_node(&*tree, &queue, 0);
 			std::sort(queue.begin(), queue.end(), my_sort);
 			
@@ -334,7 +335,6 @@ namespace vitter {
 			}
 			increment_weight(&temp);
 			
-			std::vector<my_pair> queue;
 			queueing_node(&*tree, &queue, 0);
 			std::sort(queue.begin(), queue.end(), my_sort);
 			
@@ -356,7 +356,7 @@ namespace vitter {
 	 */
 	
 	void get_the_code(node **tree, unsigned char symbol, char *do_code, char *code) {
-		char temp[SYMBOL];
+		char temp[SYMBOL / 8];
 		if ((*tree)->symbol == symbol && (*tree)->left == NULL && (*tree)->right == NULL) {
 			strcpy(code, do_code);
 			
@@ -377,7 +377,7 @@ namespace vitter {
 	}
 	
 	void get_nyt_code(node **tree, char *do_code, char *code) {
-		char temp[SYMBOL];
+		char temp[SYMBOL / 8];
 		if ((*tree)->weight == 0 && (*tree)->left == NULL && (*tree)->right == NULL) {
 			strcpy(code, do_code);
 			
