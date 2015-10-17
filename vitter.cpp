@@ -5,7 +5,7 @@
  *         5112.100.071
  *         Informatics - ITS
  * 
- * Version 1.0
+ * Version 1.1
  *
  * This code only use 2^8 code for symbol
  */
@@ -526,7 +526,7 @@ namespace vitter {
 		return;
 	}
 	
-	void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char> *code_read, std::ifstream *file, std::ofstream *out_file, node **nyt, bool *oke) {
+	void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char> *code_read, std::ifstream *file, std::ofstream *out_file, node **nyt, bool *oke, short offset) {
 		// 4 byte
 		while ((*code_read).size() < 32 && *oke) {
 			*oke = read_from_file(&*file, &*code_read);
@@ -544,7 +544,7 @@ namespace vitter {
 			temp = *tree;
 			
 		} else {
-			while (temp->left != NULL && temp->right != NULL && (*code_read).size() > 0) {
+			while (temp->left != NULL && temp->right != NULL && (*code_read).size() > offset) {
 				if ((*code_read).front() == '0') {
 					temp = temp->left;
 					(*code_read).pop();
@@ -562,7 +562,7 @@ namespace vitter {
 				
 			}
 			
-			if ((*code_read).size() == 0 && temp->left != NULL && temp->right != NULL) {
+			if ((*code_read).size() == offset && temp->left != NULL && temp->right != NULL) {
 				return;
 			}
 			
@@ -613,17 +613,31 @@ namespace vitter {
 		std::queue<char> code_write;
 		unsigned char symbol[1];
 		
+		unsigned short offset = 0;
+		
+		// initiate file with offset
+		*out << (unsigned char) 0x00;
+		
 		while (read_from_file_instansly(&*in, symbol)) {
 			encode(&root, symbol[0], &dictionary, &code_write, &*out, &nyt);
 		}
 		
 		// write to file for offset
 		if (code_write.size() > 0) {
+			offset = 8 - code_write.size();
+			
 			while (code_write.size() < 8) {
 				code_write.push('0');
 			}
 			
 			write_to_file(&*out, &code_write);
+			
+			(*out).seekp(0);
+			
+			char write_offset[1];
+			write_offset[0] = (char) offset;
+			
+			(*out).write(write_offset, 1);
 		}
 		
 		dictionary.clear();
@@ -645,9 +659,14 @@ namespace vitter {
 		
 		bool oke = true;
 		
+		unsigned short offset = 0;
+		char temp = 0x00;
+		(*in).get(temp);
+		offset = (unsigned short) temp;
+		
 		do {
-			decode(&root, &dictionary, &code_read, &*in, &*out, &nyt, &oke);
-		} while (code_read.size() > 0 || oke);
+			decode(&root, &dictionary, &code_read, &*in, &*out, &nyt, &oke, offset);
+		} while (code_read.size() > offset || oke);
 		
 		dictionary.clear();
 		delete_tree(&root);
