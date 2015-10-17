@@ -6,6 +6,8 @@
  *         Informatics - ITS
  * 
  * Version 1.0
+ *
+ * This code only use 2^8 code for symbol
  */
 
 #include <iostream>
@@ -22,12 +24,12 @@ namespace vitter {
 	#define NUMBER 512
 	
 	typedef struct node{
-		unsigned char symbol; // symbol, default string kosong
-		int weight,           // bobot
-		    number;           // nomor urut
-		node *parent,         // orang tua
-		     *left,           // anak kiri
-		     *right;          // anak kanan
+		unsigned char symbol; // symbol
+		int weight,           // weight
+		    number;           // number
+		node *parent,         // parent
+		     *left,           // left child
+		     *right;          // right child
 	} node;
 	
 	/**
@@ -179,6 +181,7 @@ namespace vitter {
 			
 		} else {
 			(*tree)->weight++;
+			
 		}
 		
 		return;
@@ -295,7 +298,7 @@ namespace vitter {
 			
 			int num = NUMBER;
 			for (int i=0; i<queue.size(); i++) {
-				queue.at(i).second->number = num--;
+				queue.at(i).second->number = --num;
 			}
 			
 			queue.clear();
@@ -340,7 +343,7 @@ namespace vitter {
 			
 			int num = NUMBER;
 			for (int i=0; i<queue.size(); i++) {
-				queue.at(i).second->number = num--;
+				queue.at(i).second->number = --num;
 			}
 			
 			queue.clear();
@@ -355,74 +358,80 @@ namespace vitter {
 	 * ENCODE
 	 */
 	
-	void get_the_code(node **tree, unsigned char symbol, char *do_code, char *code) {
-		char temp[SYMBOL / 8];
+	void get_the_code(node **tree, unsigned char symbol, char *do_code, std::queue<char> *code_write) {
+		char temp[strlen(do_code)+1];
 		if ((*tree)->symbol == symbol && (*tree)->left == NULL && (*tree)->right == NULL) {
-			strcpy(code, do_code);
+			for (int i=0; i<strlen(do_code); i++) {
+				(*code_write).push(do_code[i]);
+			}
 			
 			return;
 		}
 		
 		strcpy(temp, do_code);
 		if ((*tree)->left != NULL) {
-			get_the_code(&(*tree)->left, symbol, strncat(temp, "0", 1), code);
+			get_the_code(&(*tree)->left, symbol, strcat(temp, "0"), &*code_write);
 		}
 		
 		strcpy(temp, do_code);
 		if ((*tree)->right != NULL) {
-			get_the_code(&(*tree)->right, symbol, strncat(temp, "1", 1), code);
+			get_the_code(&(*tree)->right, symbol, strcat(temp, "1"), &*code_write);
 		}
 			
 		return;
 	}
 	
-	void get_nyt_code(node **tree, char *do_code, char *code) {
-		char temp[SYMBOL / 8];
+	void get_nyt_code(node **tree, char *do_code, std::queue<char> *code_write) {
+		char temp[strlen(do_code)+1];
 		if ((*tree)->weight == 0 && (*tree)->left == NULL && (*tree)->right == NULL) {
-			strcpy(code, do_code);
+			for (int i=0; i<strlen(do_code); i++) {
+				(*code_write).push(do_code[i]);
+			}
 			
 			return;
 		}
 		
 		strcpy(temp, do_code);
 		if ((*tree)->left != NULL) {
-			get_nyt_code(&(*tree)->left, strncat(temp, "0", 1), code);
+			get_nyt_code(&(*tree)->left, strcat(temp, "0"), &*code_write);
 		}
 		
 		strcpy(temp, do_code);
 		if ((*tree)->right != NULL) {
-			get_nyt_code(&(*tree)->right, strncat(temp, "1", 1), code);
+			get_nyt_code(&(*tree)->right, strcat(temp, "1"), &*code_write);
 		}
 			
 		return;
 	}
 	
-	void get_standard_code(unsigned char symbol, char *code) {
-		for (int i=7; i>=0; i--) {
-			if ((symbol & 0x01) == 0x01) {
-				code[i] = '1';
+	void get_standard_code(unsigned char symbol, std::queue<char> *code_write) {
+		for (int i=0; i<8; i++) {
+			if ((symbol & 0x80) == 0x80) {
+				(*code_write).push('1');
 				
 			} else {
-				code[i] = '0';
+				(*code_write).push('0');
 				
 			}
-			symbol = symbol >> 1;
+			symbol <<= 1;
 		}
 		
 		return;
 	}
-	
-	void write_to_file(std::ofstream *file, char *byte) {
+				
+	void write_to_file(std::ofstream *file, std::queue<char> *code_write) {
 		unsigned char temp;
 		temp = temp & 0x00;
 		for (int i=0; i<8; i++) {
-			if (byte[i] == '1') {
-				temp = temp ^ 0x01;
+			if ((*code_write).front() == '1') {
+				temp ^= 0x01;
 			}
 			
 			if (i != 7) {
-				temp = temp << 1;
+				temp <<= 1;
 			}
+			
+			(*code_write).pop();
 		}
 		*file << temp;
 		
@@ -436,34 +445,19 @@ namespace vitter {
 		
 		// symbol exist
 		if (it != (*dictionary).end()) {
-			char do_code[1] = "";
-			char code[SYMBOL / 8] = "";
+			char do_code[1];
+			do_code[0] = '\0';
 			
-			get_the_code(&*tree, symbol, do_code, code);
-			
-			for (int i=0; i<strlen(code); i++) {
-				(*code_write).push(code[i]);
-			}
+			get_the_code(&*tree, symbol, do_code, &*code_write);
 			
 		} else {
-			char do_code[1] = "";
-			char nyt_code[SYMBOL / 8] = "";
+			char do_code[1];
+			do_code[0] = '\0';
 			
 			if (*tree != NULL)
-				get_nyt_code(&*tree, do_code, nyt_code);
+				get_nyt_code(&*tree, do_code, &*code_write);
 			
-			char code[10];
-			code[8] = '\0';
-			
-			get_standard_code(symbol, code);
-			
-			for (int i=0; i<strlen(nyt_code); i++) {
-				(*code_write).push(nyt_code[i]);
-			}
-			
-			for (int i=0; i<strlen(code); i++) {
-				(*code_write).push(code[i]);
-			}
+			get_standard_code(symbol, &*code_write);
 			
 		}
 		
@@ -472,12 +466,7 @@ namespace vitter {
 		
 		// write to file
 		while ((*code_write).size() >= 8) {
-			char code_to_write[8];
-			for (int i=0; i<8; i++) {
-				code_to_write[i] = (*code_write).front();
-				(*code_write).pop();
-			}
-			write_to_file(&*file, code_to_write);
+			write_to_file(&*file, &*code_write);
 		}
 		
 		return;
@@ -490,25 +479,23 @@ namespace vitter {
 	bool read_from_file(std::ifstream *file, std::queue<char> *code_read) {
 		char temp;
 		
-		temp = temp & 0x00;
-		
-		char inner_temp;
+		temp &= 0x00;
 		
 		if ((*file).get(temp)) {
 			for (int i=0; i<8; i++) {
 				if ((temp & 0x80) == 0x80) {
 					(*code_read).push('1');
-				}
-				else {
+					
+				} else {
 					(*code_read).push('0');
+					
 				}
-				temp = temp << 1;
+				temp <<= 1;
 			}
 			
 			return true;
 			
-		}
-		else {
+		} else {
 			return false;
 			
 		}
@@ -516,15 +503,16 @@ namespace vitter {
 	
 	void get_char_from_code(std::queue<char> *code_read, unsigned char *character) {
 		unsigned char temp;
-		temp = temp & 0x00;
+		temp &= 0x00;
 		for (int i=0; i<8; i++) {
 			if ((*code_read).front() == '1') {
-				temp = temp ^ 0x01;
+				temp ^= 0x01;
 			}
 			
 			if (i != 7) {
-				temp = temp << 1;
+				temp <<= 1;
 			}
+			
 			(*code_read).pop();
 		}
 		character[0] = temp;
@@ -607,8 +595,7 @@ namespace vitter {
 			
 			return true;
 			
-		}
-		else {
+		} else {
 			return false;
 			
 		}
@@ -636,13 +623,7 @@ namespace vitter {
 				code_write.push('0');
 			}
 			
-			char code_to_write[8];
-			for (int i=0; i<8; i++) {
-				code_to_write[i] = code_write.front();
-				code_write.pop();
-			}
-				
-			write_to_file(&*out, code_to_write);
+			write_to_file(&*out, &code_write);
 		}
 		
 		dictionary.clear();
@@ -678,16 +659,15 @@ namespace vitter {
 
 int main(int argc, char* argv[]) {	
 	if (argc != 3) {
-        printf("Usage: %s -c | -d filename\n",argv[0]);
-        
-        return 1;
-        
-    }
-    else {
-    	time_t start, end;
-    	time(&start);
-    	
-    	std::ifstream in;
+		printf("Usage: %s -c | -d filename\n",argv[0]);
+		
+		return 1;
+		
+    } else {
+		time_t start, end;
+		time(&start);
+		
+		std::ifstream in;
 		in.open(argv[2], std::ios::in | std::ios::binary);
 		
 		std::ofstream out;
@@ -706,13 +686,11 @@ int main(int argc, char* argv[]) {
     		
     		vitter::decompress(&in, &out);
     		
-		}
-    	
-    	else {
-    		printf("Usage: %s -c | -d filename\n",argv[0]);
-    		
-        	return 1;
-        	
+		} else {
+			printf("Usage: %s -c | -d filename\n",argv[0]);
+			
+			return 1;
+			
 		}
 		
 		time(&end);
