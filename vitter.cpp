@@ -574,7 +574,7 @@ namespace vitter {
 				
 			}
 			
-			if ((*code_read).size() == 0) {
+			if ((*code_read).size() == 0 && temp->left != NULL && temp->right != NULL) {
 				return;
 			}
 			
@@ -666,7 +666,7 @@ namespace vitter {
 		
 		do {
 			decode(&root, &dictionary, &code_read, &*in, &*out, &nyt, &oke);
-		} while (code_read.size() > 0);
+		} while (code_read.size() > 0 || oke);
 		
 		dictionary.clear();
 		delete_tree(&root);
