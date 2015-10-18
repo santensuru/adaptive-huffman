@@ -192,7 +192,7 @@ namespace vitter {
 			find_external_symbol(&(*tree)->left, symbol, &*position);
 		}
 		
-		if ((*tree)->symbol == symbol) {
+		if ((*tree)->symbol == symbol && (*tree)->left == NULL && (*tree)->right == NULL && (*tree)->weight != 0) {
 			*position = *tree;
 		}
 		
@@ -541,7 +541,6 @@ namespace vitter {
 			
 			// call update procedure
 			update(&*tree, symbol[0], &*dictionary, &*nyt);
-			temp = *tree;
 			
 		} else {
 			while (temp->left != NULL && temp->right != NULL && (*code_read).size() > offset) {
@@ -573,14 +572,12 @@ namespace vitter {
 				
 				// call update procedure
 				update(&*tree, symbol[0], &*dictionary, &*nyt);
-				temp = *tree;
 				
 			} else {
 				write_to_file_instansly(&*out_file, temp->symbol);
 				
 				// call update procedure
 				update(&*tree, temp->symbol, &*dictionary, &*nyt);
-				temp = *tree;
 				
 			}
 		}
