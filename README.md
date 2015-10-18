@@ -3,7 +3,7 @@ Adaptive Huffman implement using c++
 
 # under MIT License
 
-# version 1.0
+# version 1.1
 ## how to use (in console)
 ``
 vitter.exe -c | -d <filename>
