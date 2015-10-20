@@ -360,7 +360,7 @@ namespace vitter {
 	
 	void get_the_code(node **tree, unsigned char symbol, char *do_code, std::queue<char> *code_write) {
 		char temp[strlen(do_code)+1];
-		if ((*tree)->symbol == symbol && (*tree)->left == NULL && (*tree)->right == NULL) {
+		if ((*tree)->symbol == symbol && (*tree)->left == NULL && (*tree)->right == NULL && (*tree)->weight != 0) {
 			for (int i=0; i<strlen(do_code); i++) {
 				(*code_write).push(do_code[i]);
 			}
