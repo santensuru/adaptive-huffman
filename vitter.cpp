@@ -239,16 +239,12 @@ namespace vitter {
 		return p.first < q.first;
 	}
 	
-	void update(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, node **nyt) {
-		// search in dictionary
-		std::vector<unsigned char>::iterator it;
-		it = std::search_n ((*dictionary).begin(), (*dictionary).end(), 1, symbol);
-		
+	void update(node **tree, unsigned char symbol, unsigned char *dictionary, node **nyt) {
 		node *temp;
 		
 		std::vector<my_pair> queue;
 		
-		if (it != (*dictionary).end()) {
+		if (dictionary[(int) symbol] == 0x01) {
 			find_external_symbol(&*tree, symbol, &temp);
 			
 			node *inner_temp = NULL;
@@ -303,7 +299,7 @@ namespace vitter {
 			
 			queue.clear();
 			
-			(*dictionary).push_back(symbol);
+			dictionary[(int) symbol] = 0x01;
 	
 		}
 		
@@ -438,13 +434,9 @@ namespace vitter {
 		return;
 	}
 	
-	void encode(node **tree, unsigned char symbol, std::vector<unsigned char> *dictionary, std::queue<char> *code_write, std::ofstream *file, node **nyt) {
-		// search in dictionary
-		std::vector<unsigned char>::iterator it;
-		it = std::search_n ((*dictionary).begin(), (*dictionary).end(), 1, symbol);
-		
+	void encode(node **tree, unsigned char symbol, unsigned char *dictionary, std::queue<char> *code_write, std::ofstream *file, node **nyt) {
 		// symbol exist
-		if (it != (*dictionary).end()) {
+		if (dictionary[(int) symbol] == 0x01) {
 			char do_code[1];
 			do_code[0] = '\0';
 			
@@ -462,7 +454,7 @@ namespace vitter {
 		}
 		
 		// call update procedure
-		update(&*tree, symbol, &*dictionary, &*nyt);
+		update(&*tree, symbol, dictionary, &*nyt);
 		
 		// write to file
 		while ((*code_write).size() >= 8) {
@@ -526,7 +518,7 @@ namespace vitter {
 		return;
 	}
 	
-	void decode(node **tree, std::vector<unsigned char> *dictionary, std::queue<char> *code_read, std::ifstream *file, std::ofstream *out_file, node **nyt, bool *oke, short offset) {
+	void decode(node **tree, unsigned char *dictionary, std::queue<char> *code_read, std::ifstream *file, std::ofstream *out_file, node **nyt, bool *oke, short offset) {
 		// 4 byte
 		while ((*code_read).size() < 32 && *oke) {
 			*oke = read_from_file(&*file, &*code_read);
@@ -540,7 +532,7 @@ namespace vitter {
 			write_to_file_instansly(&*out_file, symbol[0]);
 			
 			// call update procedure
-			update(&*tree, symbol[0], &*dictionary, &*nyt);
+			update(&*tree, symbol[0], dictionary, &*nyt);
 			
 		} else {
 			while (temp->left != NULL && temp->right != NULL && (*code_read).size() > offset) {
@@ -571,13 +563,13 @@ namespace vitter {
 				write_to_file_instansly(&*out_file, symbol[0]);
 				
 				// call update procedure
-				update(&*tree, symbol[0], &*dictionary, &*nyt);
+				update(&*tree, symbol[0], dictionary, &*nyt);
 				
 			} else {
 				write_to_file_instansly(&*out_file, temp->symbol);
 				
 				// call update procedure
-				update(&*tree, temp->symbol, &*dictionary, &*nyt);
+				update(&*tree, temp->symbol, dictionary, &*nyt);
 				
 			}
 		}
@@ -606,7 +598,9 @@ namespace vitter {
 		node *root = NULL;
 		node *nyt = NULL;
 		
-		std::vector<unsigned char> dictionary;
+		unsigned char dictionary[SYMBOL];
+		memset(dictionary, 0, SYMBOL);
+		
 		std::queue<char> code_write;
 		unsigned char symbol[1];
 		
@@ -616,7 +610,7 @@ namespace vitter {
 		*out << (unsigned char) 0x00;
 		
 		while (read_from_file_instansly(&*in, symbol)) {
-			encode(&root, symbol[0], &dictionary, &code_write, &*out, &nyt);
+			encode(&root, symbol[0], dictionary, &code_write, &*out, &nyt);
 		}
 		
 		// write to file for offset
@@ -637,7 +631,6 @@ namespace vitter {
 			(*out).write(write_offset, 1);
 		}
 		
-		dictionary.clear();
 		delete_tree(&root);
 		
 		return;
@@ -651,7 +644,9 @@ namespace vitter {
 		node *root = NULL;
 		node *nyt = NULL;
 		
-		std::vector<unsigned char> dictionary;
+		unsigned char dictionary[SYMBOL];
+		memset(dictionary, 0, SYMBOL);
+		
 		std::queue<char> code_read;
 		
 		bool oke = true;
@@ -662,10 +657,9 @@ namespace vitter {
 		offset = (unsigned short) temp;
 		
 		do {
-			decode(&root, &dictionary, &code_read, &*in, &*out, &nyt, &oke, offset);
+			decode(&root, dictionary, &code_read, &*in, &*out, &nyt, &oke, offset);
 		} while (code_read.size() > offset || oke);
 		
-		dictionary.clear();
 		delete_tree(&root);
 		
 		return;

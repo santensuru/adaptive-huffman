@@ -45,3 +45,13 @@ x5
   The Adventures of Sherlock Holmes.txt  | 1859    1793  |  6463  3719
   vitter.cpp                             |    4       4  |    16    11
                                          |               |
+
+x6
+
+  File                                   |   Times (s)   |   Size (KB)
+                                         |  Com     Dec  |   Ori   Com
+=========================================+===============+==============
+  Alice in Wonderland.txt                |   16      14  |    73    44
+  The Adventures of Sherlock Holmes.txt  | 1626    1560  |  6463  3719
+  vitter.cpp                             |    4       3  |    16    10
+                                         |               |
